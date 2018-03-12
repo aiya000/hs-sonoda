@@ -55,6 +55,27 @@ All valid expression is represented as this.
 All invalid terms cannot be an expression in here.
 
 ```
+-- Atomic typing
+x is natVal
+===
+x : Nat
+
+
+x is boolVal
+===
+x : Bool
+
+x is unitVal
+===
+x : Unit
+
+x : Bool, y : T, z : T
+===
+if x then y else z : T
+
+x : T, y : U
+===
+\x.y : T -> U
 ```
 
 
