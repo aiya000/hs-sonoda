@@ -12,7 +12,40 @@
 The notation of programs :notebook:  
 All expression are represented as this.
 
+<!--TODO
+- the if syntax will be represented as the case syntax of the core lang
+-->
+
 ```
+lowerAscChar = "a" | .. | "z"
+upperAscChar = "A" | .. | "Z"
+
+--
+
+atomicVal = natVal | boolVal | unitVal
+natVal    = 0 | 1 | 2 | ..
+boolVal   = True | False
+unitVal   = Unit
+
+-- Non atomic terms
+expr = atomicVal
+     | lambda
+     | syntax
+     | "(", expr, ")"
+
+identifier = lowerAscChar, {lowerAscChar | upperAscChar} -- variables
+lambda = expr
+       | identifier
+       | "\", identifier, ":", type, ".", expr -- lambda abstractions
+       | lambda expr                           -- apply functions
+
+syntax = "if", expr, "then", expr, "else", expr
+
+--
+
+type = atomicType
+     | type, "->", type -- function types (lambda caluculus types)
+atomicType = "Nat" | "Bool" | "Unit"
 ```
 
 
