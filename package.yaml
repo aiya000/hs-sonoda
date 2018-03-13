@@ -19,7 +19,9 @@ ghc-options:
 
 dependencies:
   - base >= 4.7 && < 5
+  - parsers
   - text
+  - trifecta
 
 library:
   source-dirs: src
