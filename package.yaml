@@ -25,6 +25,7 @@ dependencies:
   - text
   - trifecta
   - unordered-containers
+  - utf8-string
 
 library:
   source-dirs: src
