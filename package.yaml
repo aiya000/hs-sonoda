@@ -24,6 +24,7 @@ dependencies:
   - safe-exceptions-checked
   - text
   - trifecta
+  - unordered-containers
 
 library:
   source-dirs: src
