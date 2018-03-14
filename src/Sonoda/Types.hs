@@ -14,7 +14,7 @@ newtype Nat = Nat
 data AtomicVal = TermNat Nat
                | TermBool Bool
                | TermUnit -- Unit literals in sonoda
-  deriving (Show)
+  deriving (Show, Eq)
 
 
 {-@ type Identifier = {(x:xs) : String | isLower x} @-}
@@ -25,28 +25,28 @@ data Lambda = LambdaExpr Expr
             | LambdaIdent Identifier
             | LambdaAbst Identifier Type Expr -- ^ An Identifier, a type of the identifier, and the body
             | LambdaApply Lambda Expr         -- ^ Apply an argument to a function
-  deriving (Show)
+  deriving (Show, Eq)
 
 -- | Please see 'Expr'
 data Syntax = If Expr Expr Expr
-  deriving (Show)
+  deriving (Show, Eq)
 
 -- | Please see a chapter 'The exression rules' of design/design.md
 data Expr = ExprAtomic AtomicVal
           | ExprLambda Lambda
           | ExprSyntax Syntax
           | ExprBracket Expr -- ^ "(" expr ")"
-  deriving (Show)
+  deriving (Show, Eq)
 
 
 -- | Please see 'Type'
 data AtomicType = TypeNat | TypeBool | TypeUnit
-  deriving (Show)
+  deriving (Show, Eq)
 
 -- | Please see a chapter 'The typing rules' of design/design.md
 data Type = TypeAtomic AtomicType
           | Arrow Type Type
-  deriving (Show)
+  deriving (Show, Eq)
 
 -- | An alias to `Arrow`
 (~>) :: Type -> Type -> Type
