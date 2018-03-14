@@ -54,5 +54,10 @@ tests:
       - test/tasty
       - src
     dependencies:
+      - hspec
+      - hspec-expectations
+      - smallcheck
       - tasty
       - tasty-discover
+      - tasty-hspec
+      - tasty-smallcheck
