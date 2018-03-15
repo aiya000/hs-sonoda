@@ -54,6 +54,7 @@ tests:
       - test/tasty
       - src
     dependencies:
+      - QuickCheck
       - hspec
       - hspec-expectations
       - random-names
@@ -61,4 +62,5 @@ tests:
       - tasty
       - tasty-discover
       - tasty-hspec
+      - tasty-quickcheck
       - tasty-smallcheck
