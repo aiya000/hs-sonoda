@@ -14,26 +14,25 @@ import qualified Data.Text as T
 -- |
 -- Expect the `Either SomeException a` is `Right`,
 -- also the `a` equals a second `a`
-(?==) :: Eq a => Either e a -> a -> Bool
-(Left  _) ?== _ = False
-(Right x) ?== y = x == y
+(^==) :: Eq a => Either e a -> a -> Bool
+(Left  _) ^== _ = False
+(Right x) ^== y = x == y
 
--- | Similar to '?==' but it is in hspec
-rightShouldBe :: (HasCallStack, Show a, Eq a) => Either e a -> a -> Expectation
-rightShouldBe (Left  _) _ = pending
-rightShouldBe (Right x) y = x `shouldBe` y
+-- | Similar to '^==' but it is in hspec
+isParsedTo :: (HasCallStack, Show a, Eq a) => Either e a -> a -> Expectation
+isParsedTo (Left  _) _ = pending
+isParsedTo (Right x) y = x `shouldBe` y
 
 
-scprop_the_expression_rules_for_natVal :: NonNegative Int -> Bool
-scprop_the_expression_rules_for_natVal (NonNegative n) =
-  parseExpr (T.pack $ show n) ?== ExprAtomic (TermNat $ Nat n)
+scprop_natVal_can_be_parsed_correctly :: NonNegative Int -> Bool
+scprop_natVal_can_be_parsed_correctly (NonNegative n) =
+  parseExpr (T.pack $ show n) ^== ExprAtomic (TermNat $ Nat n)
 
-spec_the_expression_rules_boolVal_unitVal :: Spec
-spec_the_expression_rules_boolVal_unitVal = do
-  describe "boolVal" $
-    it "True,False can be parsed correctly" $ do
-      parseExpr "True"  `rightShouldBe` ExprAtomic (TermBool True)
-      parseExpr "False" `rightShouldBe` ExprAtomic (TermBool False)
-  describe "unitVal" $
-    it "Unit can be parsed correctly" $
-      parseExpr "Unit" `rightShouldBe` ExprAtomic TermUnit
+spec_boolVal_unitVal :: Spec
+spec_boolVal_unitVal =
+  describe "can be parsed correctly" $ do
+    it "True,False" $ do
+      parseExpr "True"  `isParsedTo` ExprAtomic (TermBool True)
+      parseExpr "False" `isParsedTo` ExprAtomic (TermBool False)
+    it "Unit" $
+      parseExpr "Unit" `isParsedTo` ExprAtomic TermUnit
