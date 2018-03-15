@@ -9,8 +9,7 @@
 module Sonoda.Parser where
 
 import Control.Applicative ((<|>))
-import Control.Exception.Safe (MonadThrow, throwM, Exception(..), SomeException, StringException(..))
-import Control.Exception.Safe.Checked (Throws)
+import Control.Exception.Safe (MonadThrow, throw, Exception(..), SomeException, StringException(..))
 import Data.ByteString.UTF8 (ByteString)
 import Data.HashSet (empty)
 import Data.Text (Text)
@@ -25,7 +24,7 @@ import Text.Trifecta.Result (Result(..))
 import qualified Data.Text as T
 
 -- | A constraint for a programmatic parsing
-type CodeParsing m = (TokenParsing m, Monad m, Throws ParseException)
+type CodeParsing m = (TokenParsing m, Monad m)
 
 -- | this is occured when a parse is failed
 newtype ParseException = ParseException
@@ -38,7 +37,7 @@ parseException msg = ParseException (StringException msg ?callStack)
 
 -- | Similar to 'Control.Exception.Safe.throwString' but throw it as a 'ParseException'
 throwParseExc :: (HasCallStack, MonadThrow m) => String -> m a
-throwParseExc = throwM . parseException
+throwParseExc = throw . parseException
 
 
 -- | Parse an expression
