@@ -1,8 +1,13 @@
-resolver: lts-10.9
+flags: {}
 packages:
-- '.'
+- .
 - location:
-    git:  https://github.com/lwm/tasty-discover.git
+    git: https://github.com/lwm/tasty-discover.git
     commit: 185485536bb9ac5ccb1ff7b9379717f78b4dca8b
+- location:
+    git: https://github.com/aiya000/hs-random-names.git
+    commit: e14121f40286003c1ac7aef84b2b4cb594d5567
 extra-deps:
-  - tasty-discover-4.2.0
+- random-names-0.1.0.0
+- tasty-discover-4.2.0
+resolver: lts-10.9
