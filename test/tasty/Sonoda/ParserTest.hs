@@ -34,14 +34,13 @@ scprop_natVal_can_be_parsed_correctly (NonNegative n) =
   parseExpr (T.pack $ show n) ^== ExprAtomic (TermNat $ Nat n)
 
 
-spec_boolVal_unitVal :: Spec
-spec_boolVal_unitVal =
-  describe "can be parsed correctly" $ do
-    it "True,False" $ do
-      parseExpr "True"  `isParsedTo` ExprAtomic (TermBool True)
-      parseExpr "False" `isParsedTo` ExprAtomic (TermBool False)
-    it "Unit" $
-      parseExpr "Unit" `isParsedTo` ExprAtomic TermUnit
+spec_boolVal_unitVal_can_be_parsed_correctly :: Spec
+spec_boolVal_unitVal_can_be_parsed_correctly = do
+  it "True,False" $ do
+    parseExpr "True"  `isParsedTo` ExprAtomic (TermBool True)
+    parseExpr "False" `isParsedTo` ExprAtomic (TermBool False)
+  it "Unit" $
+    parseExpr "Unit" `isParsedTo` ExprAtomic TermUnit
 
 
 prop_identifiers_can_be_parsed_correctly :: CamelName -> Bool
@@ -51,26 +50,26 @@ prop_identifiers_can_be_parsed_correctly (unCamelName &&& (unCamelName >>> T.unp
 
 spec_types_can_be_parsed_correctly :: Spec
 spec_types_can_be_parsed_correctly = do
-    it "atomic types" $ do
-      parseType "Nat"  `isParsedTo` natT
-      parseType "Bool" `isParsedTo` boolT
-      parseType "Unit" `isParsedTo` unitT
-    it "arrow types" $ do
-      parseType "Nat -> Nat" `isParsedTo` (natT ~> natT)
-      parseType "(Nat -> Unit) -> (Unit -> Bool)" `isParsedTo` ((natT ~> unitT) ~> (unitT ~> natT))
-      parseType "Nat -> Bool -> Unit" `isParsedTo` (natT ~> boolT ~> unitT)
+  it "atomic types" $ do
+    parseType "Nat"  `isParsedTo` natT
+    parseType "Bool" `isParsedTo` boolT
+    parseType "Unit" `isParsedTo` unitT
+  it "arrow types" $ do
+    parseType "Nat -> Nat" `isParsedTo` (natT ~> natT)
+    parseType "Nat -> Bool -> Unit" `isParsedTo` (natT ~> boolT ~> unitT)
+    parseType "(Nat -> Bool) -> Unit" `isParsedTo` (natT ~> boolT ~> unitT)
+    parseType "Nat -> (Bool -> Unit)" `isParsedTo` (natT ~> boolT ~> unitT)
+    parseType "(Nat -> Unit) -> (Unit -> Bool)" `isParsedTo` ((natT ~> unitT) ~> (unitT ~> natT))
 
 
 spec_lambda_abstractions_can_be_parsed_correctly :: Spec
 spec_lambda_abstractions_can_be_parsed_correctly = do
-  describe "basic forms" $ do
-    it "" $ do
-      parseExpr "\\n:Nat.n"  `isParsedTo` trivial "n" natT
-      parseExpr "\\x:Bool.x" `isParsedTo` trivial "x" boolT
-      parseExpr "\\x:Unit.x" `isParsedTo` trivial "x" unitT
-  describe "programmatic codes" $ do
-    it "" $
-      parseExpr programmaticCode `isParsedTo` programmaticExpr
+  it "basic forms" $ do
+    parseExpr "\\n:Nat.n"  `isParsedTo` trivial "n" natT
+    parseExpr "\\x:Bool.x" `isParsedTo` trivial "x" boolT
+    parseExpr "\\x:Unit.x" `isParsedTo` trivial "x" unitT
+  it "programmatic codes" $
+    parseExpr programmaticCode `isParsedTo` programmaticExpr
   where
     trivial :: Identifier -> Type -> Expr
     trivial x t = ExprLambda $ LambdaAbst x t (ExprLambda $ LambdaIdent x)
