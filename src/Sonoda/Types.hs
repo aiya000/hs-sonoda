@@ -45,9 +45,9 @@ data AtomicType = TypeNat | TypeBool | TypeUnit
 
 -- | Please see a chapter 'The typing rules' of design/design.md
 data Type = TypeAtomic AtomicType
-          | Arrow Type Type
+          | TypeArrow Type Type
   deriving (Show, Eq)
 
--- | An alias to `Arrow`
+-- | An alias to 'TypeArrow'
 (~>) :: Type -> Type -> Type
-(~>) = Arrow
+(~>) = TypeArrow
