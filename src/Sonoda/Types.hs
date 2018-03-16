@@ -41,7 +41,7 @@ data Syntax = If Expr Expr Expr
 data Expr = ExprAtomic AtomicVal
           | ExprLambda Lambda
           | ExprSyntax Syntax
-          | ExprBracket Expr -- ^ "(" expr ")"
+          | ExprParens Expr -- ^ "(" expr ")"
   deriving (Show, Eq)
 
 -- | Make a lambda abstraction as an 'Expr'
