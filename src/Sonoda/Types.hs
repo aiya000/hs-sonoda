@@ -27,6 +27,12 @@ data Lambda = LambdaExpr Expr
             | LambdaApply Lambda Expr         -- ^ Apply an argument to a function
   deriving (Show, Eq)
 
+-- | An alias to 'LambdaApply'
+(\$) :: Lambda -> Expr -> Lambda
+(\$) = LambdaApply
+infixl 9 \$
+
+
 -- | Please see 'Expr'
 data Syntax = If Expr Expr Expr
   deriving (Show, Eq)
@@ -38,6 +44,22 @@ data Expr = ExprAtomic AtomicVal
           | ExprBracket Expr -- ^ "(" expr ")"
   deriving (Show, Eq)
 
+-- | Make a lambda abstraction as an 'Expr'
+lambda :: Identifier -> Type -> Expr -> Expr
+lambda i t x = ExprLambda $ LambdaAbst i t x
+
+-- | Make an 'Identifier' as an 'Expr'
+ident :: Identifier -> Expr
+ident = ExprLambda . LambdaIdent
+
+-- | Make a 'Nat' from `Int` as an 'Expr'
+nat :: Int -> Expr
+nat = ExprAtomic . TermNat . Nat
+
+-- | Make a 'If' syntax as an 'Expr'
+if_ :: Expr -> Expr -> Expr -> Expr
+if_ x y z = ExprSyntax $ If x y z
+
 
 -- | Please see 'Type'
 data AtomicType = TypeNat | TypeBool | TypeUnit
@@ -47,6 +69,18 @@ data AtomicType = TypeNat | TypeBool | TypeUnit
 data Type = TypeAtomic AtomicType
           | TypeArrow Type Type
   deriving (Show, Eq)
+
+-- | An alias to 'TypeAtomic TypeNat'
+natT :: Type
+natT = TypeAtomic TypeNat
+
+-- | An alias to 'TypeAtomic TypeBool'
+boolT :: Type
+boolT = TypeAtomic TypeBool
+
+-- | An alias to 'TypeAtomic TypeUnit'
+unitT :: Type
+unitT = TypeAtomic TypeUnit
 
 -- | An alias to 'TypeArrow'
 (~>) :: Type -> Type -> Type
