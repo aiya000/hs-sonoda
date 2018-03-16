@@ -68,6 +68,7 @@ data AtomicType = TypeNat | TypeBool | TypeUnit
 -- | Please see a chapter 'The typing rules' of design/design.md
 data Type = TypeAtomic AtomicType
           | TypeArrow Type Type
+          | TypeParens Type -- ^ "(" type ")"
   deriving (Show, Eq)
 
 -- | An alias to 'TypeAtomic TypeNat'
