@@ -18,19 +18,16 @@ module Sonoda.Parser
 import Control.Applicative ((<|>))
 import Control.Exception.Safe (MonadThrow, throw, Exception(..), SomeException, StringException(..))
 import Data.ByteString.UTF8 (ByteString)
-import Data.HashSet (empty)
 import Data.Text (Text)
 import GHC.Stack (HasCallStack)
 import Sonoda.Types
 import Text.Parser.Char
-import Text.Parser.Combinators (optional)
+import Text.Parser.Combinators (optional, many)
 import Text.Parser.Token hiding (ident)
-import Text.Parser.Token.Highlight (Highlight(..))
 import Text.Trifecta.Delta (HasDelta(..))
 import Text.Trifecta.Parser (Parser, parseString)
 import Text.Trifecta.Result (Result(..))
 import qualified Data.Text as T
-import qualified Text.Parser.Token as P
 
 -- | A constraint for a programmatic parsing
 type CodeParsing m = (TokenParsing m, Monad m)
@@ -92,17 +89,11 @@ atomicValParser = natValParser <|> boolValParser <|> unitValParser
     unitValParser = textSymbol "Unit" *> pure TermUnit
 
 
-identifierParser :: CodeParsing m => m Identifier
-identifierParser = P.ident camelCase
-  where
-    camelCase :: TokenParsing m => IdentifierStyle m
-    camelCase = IdentifierStyle { _styleName              = "camelCase"
-                                , _styleStart             = lower
-                                , _styleLetter            = letter
-                                , _styleReserved          = empty
-                                , _styleHighlight         = Identifier
-                                , _styleReservedHighlight = Identifier
-                                }
+identifierParser :: TokenParsing m => m Identifier
+identifierParser = do
+  x <- lower
+  xs <- many $ upper <|> lower <|> digit
+  pure (x:xs)
 
 
 lambdaParser :: CodeParsing m => m Lambda
