@@ -24,7 +24,6 @@ dependencies:
   - safe-exceptions-checked
   - text
   - trifecta
-  - unordered-containers
   - utf8-string
 
 library:
