@@ -67,7 +67,7 @@ parseType :: Text -> Either SomeException Type
 parseType = parseIt typeParser
 
 
--- | a parser of expressions
+-- | A parser of expressions
 exprParser :: CodeParsing m => m Expr
 exprParser =  ExprAtomic <$> atomicValParser
           <|> ExprLambda <$> lambdaParser
@@ -130,7 +130,7 @@ syntaxParser = ifParser
       pure $ If x y z
 
 
--- | a parser of types
+-- | A parser of types
 typeParser :: CodeParsing m => m Type
 typeParser =
   optParens $ natTypeParser
