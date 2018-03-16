@@ -1,3 +1,4 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -6,7 +7,13 @@
 {-# LANGUAGE ViewPatterns #-}
 
 -- | Expose parser combinators for sonoda
-module Sonoda.Parser where
+module Sonoda.Parser
+  ( ParseException (..)
+  , parseExpr
+  , parseType
+  , exprParser
+  , typeParser
+  ) where
 
 import Control.Applicative ((<|>))
 import Control.Exception.Safe (MonadThrow, throw, Exception(..), SomeException, StringException(..))
@@ -16,12 +23,14 @@ import Data.Text (Text)
 import GHC.Stack (HasCallStack)
 import Sonoda.Types
 import Text.Parser.Char
-import Text.Parser.Token
+import Text.Parser.Combinators (optional)
+import Text.Parser.Token hiding (ident)
 import Text.Parser.Token.Highlight (Highlight(..))
 import Text.Trifecta.Delta (HasDelta(..))
-import Text.Trifecta.Parser (parseString)
+import Text.Trifecta.Parser (Parser, parseString)
 import Text.Trifecta.Result (Result(..))
 import qualified Data.Text as T
+import qualified Text.Parser.Token as P
 
 -- | A constraint for a programmatic parsing
 type CodeParsing m = (TokenParsing m, Monad m)
@@ -40,43 +49,51 @@ throwParseExc :: (HasCallStack, MonadThrow m) => String -> m a
 throwParseExc = throw . parseException
 
 
--- | Parse an expression
-parseExpr :: Text -> Either SomeException Expr
-parseExpr (T.unpack -> code) =
-  case parseString exprParser defaultDelta code of
+-- |
+-- Parse a code with the parser,
+-- Take the result or 'SomeException'
+parseIt :: Parser a -> Text -> Either SomeException a
+parseIt parser (T.unpack -> code) =
+  case parseString parser defaultDelta code of
     Success x -> return x
     Failure e -> throwParseExc $ show e
   where
     --NOTE: What is 'Delta'?
     defaultDelta = delta ("" :: ByteString)
 
+-- | Parse an expression
+parseExpr :: Text -> Either SomeException Expr
+parseExpr = parseIt exprParser
 
--- | Parse a code to 
-exprParser :: (TokenParsing m, Monad m) => m Expr
+-- | Parse a type
+parseType :: Text -> Either SomeException Type
+parseType = parseIt typeParser
+
+
+-- | a parser of expressions
+exprParser :: CodeParsing m => m Expr
 exprParser =  ExprAtomic <$> atomicValParser
           <|> ExprLambda <$> lambdaParser
           <|> ExprSyntax <$> syntaxParser
           <|> parens exprParser
 
 
--- | Parser a value
-atomicValParser :: (TokenParsing m, Monad m) => m AtomicVal
+atomicValParser :: TokenParsing m => m AtomicVal
 atomicValParser = natValParser <|> boolValParser <|> unitValParser
   where
     natValParser :: TokenParsing m => m AtomicVal
     natValParser = TermNat <$> natural'
 
-    boolValParser :: (TokenParsing m, Monad m) => m AtomicVal
-    boolValParser =  (textSymbol "True"  >> return (TermBool True))
-                 <|> (textSymbol "False" >> return (TermBool False))
+    boolValParser :: TokenParsing m => m AtomicVal
+    boolValParser =  (textSymbol "True"  *> pure (TermBool True))
+                 <|> (textSymbol "False" *> pure (TermBool False))
 
-    unitValParser :: (TokenParsing m, Monad m) => m AtomicVal
-    unitValParser = textSymbol "Unit" >> return TermUnit
+    unitValParser :: TokenParsing m => m AtomicVal
+    unitValParser = textSymbol "Unit" *> pure TermUnit
 
 
--- | Parse an identifier (camelCase)
-identifierParser :: (TokenParsing m, Monad m) => m Identifier
-identifierParser = ident camelCase
+identifierParser :: CodeParsing m => m Identifier
+identifierParser = P.ident camelCase
   where
     camelCase :: TokenParsing m => IdentifierStyle m
     camelCase = IdentifierStyle { _styleName              = "camelCase"
@@ -88,32 +105,30 @@ identifierParser = ident camelCase
                                 }
 
 
--- | Parse a lambda abstraction
-lambdaParser :: (TokenParsing m, Monad m) => m Lambda
-lambdaParser =  LambdaExpr <$> exprParser
-            <|> LambdaIdent <$> identifierParser
+lambdaParser :: CodeParsing m => m Lambda
+lambdaParser =  LambdaIdent <$> identifierParser
             <|> abstractionParser
             <|> funcApplyParser
+            <|> LambdaExpr <$> exprParser
   where
-    abstractionParser :: (TokenParsing m, Monad m) => m Lambda
+    abstractionParser :: CodeParsing m => m Lambda
     abstractionParser = do
-      backslash
+      symbolic '\\'
       i <- identifierParser
       colon
       t <- typeParser
       dot
       x <- exprParser
-      return $ LambdaAbst i t x
+      pure $ LambdaAbst i t x
 
-    funcApplyParser :: (TokenParsing m, Monad m) => m Lambda
+    funcApplyParser :: CodeParsing m => m Lambda
     funcApplyParser = LambdaApply <$> lambdaParser <*> exprParser
 
 
--- | Parse a syntax
-syntaxParser :: (TokenParsing m, Monad m) => m Syntax
+syntaxParser :: CodeParsing m => m Syntax
 syntaxParser = ifParser
   where
-    ifParser :: (TokenParsing m, Monad m) => m Syntax
+    ifParser :: CodeParsing m => m Syntax
     ifParser = do
       textSymbol "if"
       x <- exprParser
@@ -121,19 +136,47 @@ syntaxParser = ifParser
       y <- exprParser
       textSymbol "else"
       z <- exprParser
-      return $ If x y z
+      pure $ If x y z
 
 
-typeParser :: TokenParsing m => m Type
-typeParser = undefined
+-- | a parser of types
+typeParser :: CodeParsing m => m Type
+typeParser =
+  optParens $ natTypeParser
+          <|> boolTypeParser
+          <|> unitTypeParser
+          <|> arrowTypeParser
+  where
+    natTypeParser  = textSymbol "Nat"  *> pure natT
+    boolTypeParser = textSymbol "Bool" *> pure boolT
+    unitTypeParser = textSymbol "Unit" *> pure unitT
+
+    arrowTypeParser :: CodeParsing m => m Type
+    arrowTypeParser = do
+      a <- typeParser
+      _ <- textSymbol "->"
+      b <- typeParser
+      pure $ a ~> b
 
 
 -- | Similar to 'natural', but take 'Nat'
 natural' :: TokenParsing m => m Nat
 natural' = Nat . fromInteger <$> natural
 
--- | Similar to `char '\'` but for `TokenParsing`
-backslash :: (TokenParsing m, Monad m) => m Char
-backslash = do
-  token $ char '\\'
-  return '\\'
+
+-- |
+-- Optional `p` and `q` at back and forward of `r`,
+-- but a matching of `q` is required if `p` matches.
+-- Also take a result of `r` at last.
+optSurround :: CodeParsing m => m a -> m b -> m c -> m c
+optSurround p q r = do
+  x <- optional p
+  result <- r
+  case x of
+    Just _  -> Just <$> q
+    Nothing -> return Nothing
+  pure result
+
+-- | Optional parenthesis ('optSurround' and `'('` `')'`)
+optParens :: CodeParsing m => m a -> m a
+optParens = optSurround (symbolic '(') (symbolic ')')
