@@ -96,6 +96,8 @@ boolT = TypeAtomic TypeBool
 unitT :: Type
 unitT = TypeAtomic TypeUnit
 
+infixr 9 ~>
+
 -- | An alias to 'TypeArrow'
 (~>) :: Type -> Type -> Type
 (~>) = TypeArrow
