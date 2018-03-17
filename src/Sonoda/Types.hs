@@ -3,6 +3,8 @@
 -- | Expose the AST of sonoda
 module Sonoda.Types where
 
+import Data.Semigroup ((<>))
+
 {-@ Nat :: {x:Int | x >= 0} -> Nat @-}
 {-@ unNat :: Nat -> {x:Int | x >= 0} @-}
 -- | Mean nutural numbers
@@ -63,13 +65,24 @@ if_ x y z = ExprSyntax $ If x y z
 
 -- | Please see 'Type'
 data AtomicType = TypeNat | TypeBool | TypeUnit
-  deriving (Show, Eq)
+  deriving (Eq)
+
+instance Show AtomicType where
+  show TypeNat  = "Nat"
+  show TypeBool = "Bool"
+  show TypeUnit = "Unit"
 
 -- | Please see a chapter 'The typing rules' of design/design.md
 data Type = TypeAtomic AtomicType
           | TypeArrow Type Type
           | TypeParens Type -- ^ "(" type ")"
-  deriving (Show, Eq)
+  deriving (Eq)
+
+instance Show Type where
+  show (TypeAtomic x)  = show x
+  show (TypeArrow (TypeArrow x y) z) = "(" <> show x <> " -> " <> show y <> ")" <> " -> " <> show z
+  show (TypeArrow x y) = show x <> " -> " <> show y
+  show (TypeParens x)  = "(" <> show x <> ")"
 
 -- | An alias to 'TypeAtomic TypeNat'
 natT :: Type
