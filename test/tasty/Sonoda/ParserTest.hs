@@ -61,9 +61,11 @@ spec_types_can_be_parsed_correctly = do
       parseType "Nat -> Bool -> Unit" `isParsedTo` (natT ~> boolT ~> unitT)
     it "(Nat -> Bool) -> Unit" $
       parseType "(Nat -> Bool) -> Unit" `isParsedTo` (TypeParens (natT ~> boolT) ~> unitT)
-    it "Nat -> (Bool -> Unit)" $
+  describe "equalities" $ do
+    it "(a) ~ a"   $ parseType "(Nat)"   `isParsedTo` natT
+    it "((a)) ~ a" $ parseType "((Nat))" `isParsedTo` natT
+    it "a -> (b) ~ a -> b" $ do
       parseType "Nat -> (Bool -> Unit)" `isParsedTo` (natT ~> boolT ~> unitT)
-    it "(Nat -> Unit) -> (Unit -> Bool)" $
       parseType "(Nat -> Unit) -> (Unit -> Bool)" `isParsedTo` (TypeParens (natT ~> unitT) ~> unitT ~> boolT)
 
 
