@@ -9,7 +9,7 @@ import Data.Semigroup ((<>))
 import Sonoda.Parser
 import Sonoda.Types
 import System.Random.NameCase (CamelName(..))
-import Test.Hspec (it, expectationFailure)
+import Test.Hspec (describe, it, expectationFailure)
 import Test.Hspec.Expectations (Expectation, HasCallStack, shouldBe)
 import Test.SmallCheck.Series (NonNegative(..))
 import Test.Tasty.Hspec (Spec)
@@ -50,18 +50,21 @@ prop_identifiers_can_be_parsed_correctly (unCamelName &&& (unCamelName >>> T.unp
 
 spec_types_can_be_parsed_correctly :: Spec
 spec_types_can_be_parsed_correctly = do
-  it "atomic types" $ do
-    parseType "Nat"  `isParsedTo` natT
-    parseType "Bool" `isParsedTo` boolT
-    parseType "Unit" `isParsedTo` unitT
-  it "ignore top level parentheses" $
-    parseType "(Nat) is same as Nat"  `isParsedTo` natT
-  it "arrow types" $ do
-    parseType "Nat -> Nat" `isParsedTo` (natT ~> natT)
-    parseType "Nat -> Bool -> Unit" `isParsedTo` (natT ~> boolT ~> unitT)
-    parseType "(Nat -> Bool) -> Unit" `isParsedTo` (natT ~> boolT ~> unitT)
-    parseType "Nat -> (Bool -> Unit)" `isParsedTo` (natT ~> boolT ~> unitT)
-    parseType "(Nat -> Unit) -> (Unit -> Bool)" `isParsedTo` ((natT ~> unitT) ~> (unitT ~> natT))
+  describe "atomic types" $ do
+    it "Nat"  $ parseType "Nat"  `isParsedTo` natT
+    it "Bool" $ parseType "Bool" `isParsedTo` boolT
+    it "Unit" $ parseType "Unit" `isParsedTo` unitT
+  describe "arrow types" $ do
+    it "Nat -> Nat" $
+      parseType "Nat -> Nat" `isParsedTo` (natT ~> natT)
+    it "Nat -> Bool -> Unit" $
+      parseType "Nat -> Bool -> Unit" `isParsedTo` (natT ~> boolT ~> unitT)
+    it "(Nat -> Bool) -> Unit" $
+      parseType "(Nat -> Bool) -> Unit" `isParsedTo` (TypeParens (natT ~> boolT) ~> unitT)
+    it "Nat -> (Bool -> Unit)" $
+      parseType "Nat -> (Bool -> Unit)" `isParsedTo` (natT ~> boolT ~> unitT)
+    it "(Nat -> Unit) -> (Unit -> Bool)" $
+      parseType "(Nat -> Unit) -> (Unit -> Bool)" `isParsedTo` ((natT ~> unitT) ~> (unitT ~> natT))
 
 
 spec_lambda_abstractions_can_be_parsed_correctly :: Spec
