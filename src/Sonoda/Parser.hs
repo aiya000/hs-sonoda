@@ -103,7 +103,7 @@ identifierParser = do
 lambdaParser :: CodeParsing m => m Lambda
 lambdaParser =  LambdaIdent <$> identifierParser
             <|> abstractionParser
-            <|> funcApplyParser
+            <|> applicationParser
             <|> LambdaExpr <$> exprParser
   where
     abstractionParser :: CodeParsing m => m Lambda
@@ -116,8 +116,8 @@ lambdaParser =  LambdaIdent <$> identifierParser
       x <- exprParser
       pure $ LambdaAbst i t x
 
-    funcApplyParser :: CodeParsing m => m Lambda
-    funcApplyParser = LambdaApply <$> lambdaParser <*> exprParser
+    applicationParser :: CodeParsing m => m Lambda
+    applicationParser = LambdaApply <$> lambdaParser <*> exprParser
 
 
 syntaxParser :: CodeParsing m => m Syntax
