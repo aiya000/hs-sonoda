@@ -64,7 +64,7 @@ spec_types_can_be_parsed_correctly = do
     it "Nat -> (Bool -> Unit)" $
       parseType "Nat -> (Bool -> Unit)" `isParsedTo` (natT ~> boolT ~> unitT)
     it "(Nat -> Unit) -> (Unit -> Bool)" $
-      parseType "(Nat -> Unit) -> (Unit -> Bool)" `isParsedTo` ((natT ~> unitT) ~> (unitT ~> natT))
+      parseType "(Nat -> Unit) -> (Unit -> Bool)" `isParsedTo` (TypeParens (natT ~> unitT) ~> unitT ~> boolT)
 
 
 spec_lambda_abstractions_can_be_parsed_correctly :: Spec
@@ -80,7 +80,7 @@ spec_lambda_abstractions_can_be_parsed_correctly = do
     trivial x t = ExprLambda $ LambdaAbst x t (ExprLambda $ LambdaIdent x)
 
     programmaticCode =
-      "\\plus:Nat -> Nat -> Nat\\n : Nat. \\m : Nat.\n" <>
+      "\\plus:Nat -> Nat -> Nat. \\n : Nat. \\m : Nat.\n" <>
       "   if equal m 0\n" <>
       "     then n\n" <>
       "     else plus (succ n) (pred m)"
