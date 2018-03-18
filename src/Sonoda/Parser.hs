@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ImplicitParams #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -18,11 +19,12 @@ module Sonoda.Parser
 import Control.Applicative ((<|>))
 import Control.Exception.Safe (MonadThrow, throw, Exception(..), SomeException, StringException(..))
 import Data.ByteString.UTF8 (ByteString)
+import Data.List.NonEmpty (NonEmpty(..))
 import Data.Text (Text)
 import GHC.Stack (HasCallStack)
-import Sonoda.Types
+import Sonoda.Types hiding ((~>))
 import Text.Parser.Char
-import Text.Parser.Combinators (optional, many)
+import Text.Parser.Combinators (many, sepByNonEmpty)
 import Text.Parser.Token hiding (ident)
 import Text.Trifecta.Delta (HasDelta(..))
 import Text.Trifecta.Parser (Parser, parseString)
@@ -91,8 +93,10 @@ atomicValParser = natValParser <|> boolValParser <|> unitValParser
 
 identifierParser :: TokenParsing m => m Identifier
 identifierParser = do
-  x <- lower
+  _  <- whiteSpace
+  x  <- lower
   xs <- many $ upper <|> lower <|> digit
+  _  <- whiteSpace
   pure (x:xs)
 
 
@@ -130,44 +134,32 @@ syntaxParser = ifParser
       pure $ If x y z
 
 
--- | A parser of types
-typeParser :: CodeParsing m => m Type
-typeParser =
-  optParens $ natTypeParser
-          <|> boolTypeParser
-          <|> unitTypeParser
-          <|> arrowTypeParser
+atomicTypeParser :: CodeParsing m => m Type
+atomicTypeParser = natTypeParser <|> boolTypeParser <|> unitTypeParser
   where
     natTypeParser  = textSymbol "Nat"  *> pure natT
     boolTypeParser = textSymbol "Bool" *> pure boolT
     unitTypeParser = textSymbol "Unit" *> pure unitT
 
-    arrowTypeParser :: CodeParsing m => m Type
-    arrowTypeParser = do
-      a <- typeParser
-      _ <- textSymbol "->"
-      b <- typeParser
-      pure $ a ~> b
+-- | A parser of types
+typeParser :: CodeParsing m => m Type
+typeParser = normalize <$> typeParser'
+  where
+    -- Remove superflous semantics
+    normalize :: Type -> Type
+    normalize (TypeParens x) = normalize x
+    normalize (TypeArrow x (TypeParens (TypeArrow y z))) = normalize $ TypeArrow x (TypeArrow y z)
+    normalize x = x
+
+    typeParser' :: CodeParsing m => m Type
+    typeParser' = do
+      (x:|xs) <- (atomicTypeParser <|> innerTypeParser) `sepByNonEmpty` textSymbol "->"
+      pure $ foldr1 TypeArrow (x:xs)
+
+    innerTypeParser :: CodeParsing m => m Type
+    innerTypeParser = TypeParens <$> parens typeParser
 
 
 -- | Similar to 'natural', but take 'Nat'
 natural' :: TokenParsing m => m Nat
 natural' = Nat . fromInteger <$> natural
-
-
--- |
--- Optional `p` and `q` at back and forward of `r`,
--- but a matching of `q` is required if `p` matches.
--- Also take a result of `r` at last.
-optSurround :: CodeParsing m => m a -> m b -> m c -> m c
-optSurround p q r = do
-  x <- optional p
-  result <- r
-  case x of
-    Just _  -> Just <$> q
-    Nothing -> return Nothing
-  pure result
-
--- | Optional parenthesis ('optSurround' and `'('` `')'`)
-optParens :: CodeParsing m => m a -> m a
-optParens = optSurround (symbolic '(') (symbolic ')')
