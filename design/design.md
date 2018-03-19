@@ -1,7 +1,7 @@
 # Hints
 
 - `-- comment` is a comment, it doesn't touch any rules
-- `..` represents an atmosphere of the continuation :joy:
+- `..` represents atmospheres of ranges :joy:
 - `a === b` represents that if `a` is valid then `b` is valid too
 
 <!--TODO
@@ -17,35 +17,35 @@ All expression are represented as this.
 -->
 
 ```
-lowerAscChar = "a" | .. | "z"
-upperAscChar = "A" | .. | "Z"
+lowerAscChar <- "a" / .. / "z"
+upperAscChar <- "A" / .. / "Z"
 
 --
 
-atomicVal = natVal | boolVal | unitVal
-natVal    = 0 | 1 | 2 | ..
-boolVal   = True | False
-unitVal   = Unit
+atomicVal <- natVal / boolVal / unitVal
+natVal    <- "0" / "1" / "2" / ..
+boolVal   <- "True" / "False"
+unitVal   <- "Unit"
 
 -- Non atomic terms
-expr = atomicVal
-     | lambda
-     | syntax
-     | "(", expr, ")"
+expr <- atomicVal
+      / lambda
+      / syntax
+      / "(" expr ")"
 
-identifier = lowerAscChar, {lowerAscChar | upperAscChar} -- variables
-lambda = expr
-       | identifier
-       | "\", identifier, ":", type, ".", expr -- lambda abstractions
-       | lambda expr                           -- apply functions
+identifier <- lowerAscChar (lowerAscChar / upperAscChar)* -- variables
+lambda <- expr
+        / identifier
+        / "\" identifier ":" type "." expr -- lambda abstractions
+        / lambda expr                      -- function applications
 
-syntax = "if", expr, "then", expr, "else", expr
+syntax <- "if" expr "then" expr "else" expr
 
 --
 
-type = atomicType
-     | type, "->", type -- function types (lambda caluculus types)
-atomicType = "Nat" | "Bool" | "Unit"
+type <- atomicType
+      / type "->" type -- function types (lambda caluculus types)
+atomicType <- "Nat" / "Bool" / "Unit"
 ```
 
 
