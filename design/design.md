@@ -29,17 +29,18 @@ unitVal   <- "Unit"
 
 -- Non atomic terms
 expr <- atomicVal
-      / lambda
       / syntax
+      / lambda
       / "(" expr ")"
 
-identifier <- lowerAscChar (lowerAscChar / upperAscChar)* -- variables
+identifier <- !lowerAscChar (lowerAscChar / upperAscChar)* -- variables
 lambda <- expr
         / identifier
         / "\" identifier ":" type "." expr -- lambda abstractions
         / lambda expr                      -- function applications
 
-syntax <- "if" expr "then" expr "else" expr
+if <- "if" expr "then" expr "else" expr
+syntax <- if
 
 --
 
