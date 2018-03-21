@@ -62,6 +62,14 @@ infixl 9 \$
 (\$) :: Lambda -> Expr -> Lambda
 (\$) = LambdaApply
 
+-- | Similar to 'ExprParens', but for 'Lambda'
+parens :: Lambda -> Lambda
+parens = parens' . ExprLambda
+
+-- | Similar to 'ExprParens', but take 'Expr' and give 'Lambda'
+parens' :: Expr -> Lambda
+parens' = LambdaExpr . ExprParens
+
 
 -- | Please see 'Expr'
 data Syntax = If Expr Expr Expr
@@ -86,6 +94,14 @@ instance Show Expr where
 -- | Make a lambda abstraction as an 'Expr'
 lambda :: Identifier -> Type -> Expr -> Expr
 lambda i t x = ExprLambda $ LambdaAbst i t x
+
+-- | Make a lambda application as an 'Expr'
+apply :: Lambda -> Expr -> Expr
+apply x y = ExprLambda $ LambdaApply x y
+
+-- | Similar to 'apply', but take only 2 lamba
+apply' :: Lambda -> Lambda -> Expr
+apply' x y = ExprLambda . LambdaApply x $ ExprLambda y
 
 -- | Make an 'Identifier' as an 'Expr'
 ident :: Identifier -> Expr

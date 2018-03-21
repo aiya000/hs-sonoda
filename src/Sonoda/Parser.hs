@@ -23,13 +23,14 @@ import Data.List.NonEmpty (NonEmpty(..))
 import Data.Text (Text)
 import GHC.Stack (HasCallStack)
 import Sonoda.Types hiding ((~>))
-import Text.Parser.Char
-import Text.Parser.Combinators (many, sepByNonEmpty)
-import Text.Parser.Token hiding (ident)
+import Text.Parser.Token (TokenParsing)
 import Text.Trifecta.Delta (HasDelta(..))
 import Text.Trifecta.Parser (Parser, parseString)
 import Text.Trifecta.Result (Result(..))
 import qualified Data.Text as T
+import qualified Text.Parser.Char as P
+import qualified Text.Parser.Combinators as P
+import qualified Text.Parser.Token as P
 
 -- | A constraint for a programmatic parsing
 type CodeParsing m = (TokenParsing m, Monad m)
@@ -72,9 +73,9 @@ parseType = parseIt typeParser
 -- | A parser of expressions
 exprParser :: CodeParsing m => m Expr
 exprParser =  ExprAtomic <$> atomicValParser
-          <|> ExprLambda <$> lambdaParser
           <|> ExprSyntax <$> syntaxParser
-          <|> parens exprParser
+          <|> ExprLambda <$> lambdaParser
+          <|> P.parens exprParser
 
 
 atomicValParser :: TokenParsing m => m AtomicVal
@@ -84,19 +85,19 @@ atomicValParser = natValParser <|> boolValParser <|> unitValParser
     natValParser = TermNat <$> natural'
 
     boolValParser :: TokenParsing m => m AtomicVal
-    boolValParser =  (textSymbol "True"  *> pure (TermBool True))
-                 <|> (textSymbol "False" *> pure (TermBool False))
+    boolValParser =  (P.textSymbol "True"  *> pure (TermBool True))
+                 <|> (P.textSymbol "False" *> pure (TermBool False))
 
     unitValParser :: TokenParsing m => m AtomicVal
-    unitValParser = textSymbol "Unit" *> pure TermUnit
+    unitValParser = P.textSymbol "Unit" *> pure TermUnit
 
 
 identifierParser :: TokenParsing m => m Identifier
 identifierParser = do
-  _  <- whiteSpace
-  x  <- lower
-  xs <- many $ upper <|> lower <|> digit
-  _  <- whiteSpace
+  _  <- P.whiteSpace
+  x  <- P.lower
+  xs <- P.many $ P.upper <|> P.lower <|> P.digit
+  _  <- P.whiteSpace
   pure (x:xs)
 
 
@@ -108,11 +109,11 @@ lambdaParser =  LambdaIdent <$> identifierParser
   where
     abstractionParser :: CodeParsing m => m Lambda
     abstractionParser = do
-      symbolic '\\'
+      P.symbolic '\\'
       i <- identifierParser
-      colon
+      P.colon
       t <- typeParser
-      dot
+      P.dot
       x <- exprParser
       pure $ LambdaAbst i t x
 
@@ -125,11 +126,11 @@ syntaxParser = ifParser
   where
     ifParser :: CodeParsing m => m Syntax
     ifParser = do
-      textSymbol "if"
+      P.textSymbol "if"
       x <- exprParser
-      textSymbol "then"
+      P.textSymbol "then"
       y <- exprParser
-      textSymbol "else"
+      P.textSymbol "else"
       z <- exprParser
       pure $ If x y z
 
@@ -137,9 +138,9 @@ syntaxParser = ifParser
 atomicTypeParser :: CodeParsing m => m Type
 atomicTypeParser = natTypeParser <|> boolTypeParser <|> unitTypeParser
   where
-    natTypeParser  = textSymbol "Nat"  *> pure natT
-    boolTypeParser = textSymbol "Bool" *> pure boolT
-    unitTypeParser = textSymbol "Unit" *> pure unitT
+    natTypeParser  = P.textSymbol "Nat"  *> pure natT
+    boolTypeParser = P.textSymbol "Bool" *> pure boolT
+    unitTypeParser = P.textSymbol "Unit" *> pure unitT
 
 -- | A parser of types
 typeParser :: CodeParsing m => m Type
@@ -153,13 +154,13 @@ typeParser = normalize <$> typeParser'
 
     typeParser' :: CodeParsing m => m Type
     typeParser' = do
-      (x:|xs) <- (atomicTypeParser <|> innerTypeParser) `sepByNonEmpty` textSymbol "->"
+      (x:|xs) <- (atomicTypeParser <|> innerTypeParser) `P.sepByNonEmpty` P.textSymbol "->"
       pure $ foldr1 TypeArrow (x:xs)
 
     innerTypeParser :: CodeParsing m => m Type
-    innerTypeParser = TypeParens <$> parens typeParser
+    innerTypeParser = TypeParens <$> P.parens typeParser
 
 
 -- | Similar to 'natural', but take 'Nat'
 natural' :: TokenParsing m => m Nat
-natural' = Nat . fromInteger <$> natural
+natural' = Nat . fromInteger <$> P.natural
