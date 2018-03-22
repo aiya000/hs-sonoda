@@ -51,10 +51,15 @@ instance Show Lambda where
   show (LambdaIdent x) = x
   show (LambdaAbst n t x) = [i|\\${n}:${show t}.${show x}|]
   show (LambdaApply x y) =
-    case y of
-      ExprLambda (LambdaApply _ _)  -> [i|(${show x}) (${show y})|]
-      ExprLambda (LambdaAbst _ _ _) -> [i|(${show x}) (${show y})|]
-      _ -> [i|(${show x}) ${show y}|]
+    let x' = case x of
+                  LambdaAbst _ _ _ -> "(" <> show x <> ")"
+                  LambdaApply _ _ -> "(" <> show x <> ")"
+                  _ -> show x
+        y' = case y of
+                  ExprLambda (LambdaAbst _ _ _) -> "(" <> show y <> ")"
+                  ExprLambda (LambdaApply _ _) -> "(" <> show y <> ")"
+                  _ -> show y
+    in x' <> " " <> y'
 
 infixl 9 \$
 
