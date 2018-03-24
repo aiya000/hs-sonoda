@@ -4,6 +4,7 @@
 -- | Expose the AST of sonoda
 module Sonoda.Types where
 
+import Data.List.NonEmpty (NonEmpty(..))
 import Data.Semigroup ((<>))
 import Data.String.Here (i)
 
@@ -34,49 +35,6 @@ instance Show AtomicVal where
 type Identifier = String
 
 -- | Please see 'Expr'
-data Lambda = LambdaExpr Expr
-            | LambdaIdent Identifier
-            | LambdaAbst Identifier Type Expr -- ^ An Identifier, a type of the identifier, and the body
-            | LambdaApply Lambda Expr         -- ^ Apply an argument to a function
-  deriving (Eq)
-
--- |
--- Show AST directly,
--- and the superfluous representations are included
---
--- (e.g. "(\x:Nat.x) (10)", "((10)) 20")
--- (                 ^  ^    ^^ ^^     )
-instance Show Lambda where
-  show (LambdaExpr  x) = show x
-  show (LambdaIdent x) = x
-  show (LambdaAbst n t x) = [i|\\${n}:${show t}.${show x}|]
-  show (LambdaApply x y) =
-    let x' = case x of
-                  LambdaAbst _ _ _ -> "(" <> show x <> ")"
-                  LambdaApply _ _ -> "(" <> show x <> ")"
-                  _ -> show x
-        y' = case y of
-                  ExprLambda (LambdaAbst _ _ _) -> "(" <> show y <> ")"
-                  ExprLambda (LambdaApply _ _) -> "(" <> show y <> ")"
-                  _ -> show y
-    in x' <> " " <> y'
-
-infixl 9 \$
-
--- | An alias to 'LambdaApply'
-(\$) :: Lambda -> Expr -> Lambda
-(\$) = LambdaApply
-
--- | Similar to 'ExprParens', but for 'Lambda'
-parens :: Lambda -> Lambda
-parens = parens' . ExprLambda
-
--- | Similar to 'ExprParens', but take 'Expr' and give 'Lambda'
-parens' :: Expr -> Lambda
-parens' = LambdaExpr . ExprParens
-
-
--- | Please see 'Expr'
 data Syntax = If Expr Expr Expr
   deriving (Eq)
 
@@ -85,32 +43,37 @@ instance Show Syntax where
 
 -- | Please see a chapter 'The exression rules' of design/design.md
 data Expr = ExprAtomic AtomicVal
-          | ExprLambda Lambda
+          | ExprLambda Identifier Type Expr -- ^ A lambda abstraction that is constructed by an Identifier, a type of the identifier, and the body
+          | ExprApply Expr (NonEmpty Expr) -- ^ Apply arguments to a function
           | ExprSyntax Syntax
+          | ExprIdent Identifier
           | ExprParens Expr -- ^ "(" expr ")"
   deriving (Eq)
 
+-- |
+-- Show AST directly,
+-- and the superfluous representations are not removed
+--
+-- (e.g. "(\x:Nat.x) (10)", "((10)) 20")
+-- (                 ^  ^    ^^ ^^     )
 instance Show Expr where
   show (ExprAtomic x) = show x
-  show (ExprLambda x) = show x
   show (ExprSyntax x) = show x
+  show (ExprLambda n t x) = [i|\\${n}:${show t}.${show x}|]
   show (ExprParens x) = "(" <> show x <> ")"
+  show (ExprIdent x) = x
+  show (ExprApply x (y:|ys)) = show' x <> " " <> unwords (map show' $ y:ys)
+    where
+      show' :: Expr -> String
+      show' x@ExprLambda {} = "(" <> show x <> ")"
+      show' x@ExprApply {}  = "(" <> show x <> ")"
+      show' x = show x
 
--- | Make a lambda abstraction as an 'Expr'
-lambda :: Identifier -> Type -> Expr -> Expr
-lambda i t x = ExprLambda $ LambdaAbst i t x
+infixl 9 \$
 
--- | Make a lambda application as an 'Expr'
-apply :: Lambda -> Expr -> Expr
-apply x y = ExprLambda $ LambdaApply x y
-
--- | Similar to 'apply', but take only 2 lamba
-apply' :: Lambda -> Lambda -> Expr
-apply' x y = ExprLambda . LambdaApply x $ ExprLambda y
-
--- | Make an 'Identifier' as an 'Expr'
-ident :: Identifier -> Expr
-ident = ExprLambda . LambdaIdent
+-- | Same as 'ExprApply\'' but a function
+(\$) :: Expr -> Expr -> Expr
+x \$ y = ExprApply x (y:|[])
 
 -- | Make a 'Nat' from `Int` as an 'Expr'
 nat :: Int -> Expr

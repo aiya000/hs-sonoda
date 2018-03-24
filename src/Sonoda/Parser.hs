@@ -72,10 +72,29 @@ parseType = parseIt typeParser
 
 -- | A parser of expressions
 exprParser :: CodeParsing m => m Expr
-exprParser =  ExprAtomic <$> atomicValParser
-          <|> ExprSyntax <$> syntaxParser
-          <|> ExprLambda <$> lambdaParser
-          <|> P.parens exprParser
+exprParser = ExprAtomic <$> atomicValParser
+         <|> lambdaParser
+         <|> applicationParser
+         <|> ExprSyntax <$> syntaxParser
+         <|> ExprIdent  <$> identifierParser
+         <|> P.parens exprParser
+  where
+    lambdaParser :: CodeParsing m => m Expr
+    lambdaParser = do
+      P.symbolic '\\'
+      n <- identifierParser
+      P.colon
+      t <- typeParser
+      P.dot
+      x <- exprParser
+      pure $ ExprLambda n t x
+
+    applicationParser :: CodeParsing m => m Expr
+    applicationParser = do
+      --er <- LambdaIdent <$> identifierParser <|> P.parens abstractionParser
+      --ee <- many $ LambdaIdent <$> identifierParser <|> 
+      --LambdaApply <$> lambdaParser <*> exprParser
+      pure $ ExprApply (ExprIdent "f") (ExprIdent "x":|[])
 
 
 atomicValParser :: TokenParsing m => m AtomicVal
@@ -91,7 +110,6 @@ atomicValParser = natValParser <|> boolValParser <|> unitValParser
     unitValParser :: TokenParsing m => m AtomicVal
     unitValParser = P.textSymbol "Unit" *> pure TermUnit
 
-
 identifierParser :: TokenParsing m => m Identifier
 identifierParser = do
   _  <- P.whiteSpace
@@ -99,27 +117,6 @@ identifierParser = do
   xs <- P.many $ P.upper <|> P.lower <|> P.digit
   _  <- P.whiteSpace
   pure (x:xs)
-
-
-lambdaParser :: CodeParsing m => m Lambda
-lambdaParser =  LambdaIdent <$> identifierParser
-            <|> abstractionParser
-            <|> applicationParser
-            <|> LambdaExpr <$> exprParser
-  where
-    abstractionParser :: CodeParsing m => m Lambda
-    abstractionParser = do
-      P.symbolic '\\'
-      i <- identifierParser
-      P.colon
-      t <- typeParser
-      P.dot
-      x <- exprParser
-      pure $ LambdaAbst i t x
-
-    applicationParser :: CodeParsing m => m Lambda
-    applicationParser = LambdaApply <$> lambdaParser <*> exprParser
-
 
 syntaxParser :: CodeParsing m => m Syntax
 syntaxParser = ifParser

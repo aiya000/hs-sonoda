@@ -5,6 +5,7 @@
 module Sonoda.ParserTest where
 
 import Control.Arrow ((>>>), (&&&))
+import Data.List.NonEmpty (NonEmpty(..))
 import Data.Semigroup ((<>))
 import Sonoda.Parser
 import Sonoda.Types
@@ -45,7 +46,7 @@ spec_boolVal_unitVal_can_be_parsed_correctly = do
 
 prop_identifiers_can_be_parsed_correctly :: CamelName -> Bool
 prop_identifiers_can_be_parsed_correctly (unCamelName &&& (unCamelName >>> T.unpack) -> (ident, ident'))
-  = parseExpr ident ^== ExprLambda (LambdaIdent ident')
+  = parseExpr ident ^== ExprIdent ident'
 
 
 spec_types_can_be_parsed_correctly :: Spec
@@ -72,20 +73,27 @@ spec_types_can_be_parsed_correctly = do
 spec_lambda_forms_can_be_parsed_correctly :: Spec
 spec_lambda_forms_can_be_parsed_correctly = do
   it "abstractions" $ do
+    parseExpr "\\n:Nat.10" `shouldBeParsedTo` ExprLambda "n" natT (nat 10)
     parseExpr "\\n:Nat.n"  `shouldBeParsedTo` trivial "n" natT
     parseExpr "\\x:Bool.x" `shouldBeParsedTo` trivial "x" boolT
     parseExpr "\\x:Unit.x" `shouldBeParsedTo` trivial "x" unitT
+    parseExpr "\\s:Unit -> Unit.z:Unit.z" `shouldBeParsedTo` churchNum "s" "z" 0
+    parseExpr "\\s:Unit -> Unit.z:Unit.s z" `shouldBeParsedTo` churchNum "s" "z" 1
+    parseExpr "\\s:Unit -> Unit.z:Unit.s (s z)" `shouldBeParsedTo` churchNum "s" "z" 2
+    parseExpr "\\x:Unit.x" `shouldBeParsedTo` trivial "x" unitT
+  it "applications" $
+    parseExpr "(\\x:Nat.x) 10" `shouldBeParsedTo` (\$) (ExprParens $ trivial "x" natT) (nat 10)
   it "real world codes" $
     parseExpr code `shouldBeParsedTo` exprOfCode
   where
     trivial :: Identifier -> Type -> Expr
-    trivial x t = lambda x t $ ident x
+    trivial x t = ExprLambda x t $ ExprIdent x
 
     churchNum :: String -> String -> Int -> Expr
     churchNum s z n =
-      let num = replicate n $ LambdaIdent s
-      in lambda s (unitT ~> unitT) . lambda z unitT $
-          foldr ((ExprParens.) . apply) (ident z) num
+      let num = replicate n $ ExprIdent s
+      in ExprLambda s (unitT ~> unitT) . ExprLambda z unitT $
+          foldr (\$) (ExprIdent z) num
 
     code =
       "\\plus:Nat -> Nat -> Nat. \\n : Nat. \\m : Nat.\n" <>
@@ -94,18 +102,19 @@ spec_lambda_forms_can_be_parsed_correctly = do
       "     else plus (succ n) (pred m)"
 
     exprOfCode =
-      lambda "plus" (natT ~> natT ~> natT) . lambda "n" natT . lambda "m" natT $
+      ExprLambda "plus" (natT ~> natT ~> natT) . ExprLambda "n" natT . ExprLambda "m" natT $
         if_ condClause
           thenClause
           elseClause
 
     condClause :: Expr
-    condClause = ExprLambda $ LambdaIdent "equal" \$ ident "m" \$ nat 0
-    thenClause = ident "n"
-    elseClause =
-      ExprLambda $ LambdaIdent "plus"
-                \$ (ExprLambda $ LambdaIdent "succ" \$ ident "n" )
-                \$ (ExprLambda $ LambdaIdent "pred" \$ ident "m")
+    condClause = ExprApply (ExprIdent "equal") (ExprIdent "m" :| [nat 0])
+    thenClause :: Expr
+    thenClause = ExprIdent "n"
+    elseClause :: Expr
+    elseClause = ExprApply (ExprIdent "plus") $
+                  (ExprIdent "succ" \$ ExprIdent "n" )
+                  :| [ExprIdent "pred" \$ ExprIdent "m"]
 
 
 --spec_syntax_can_be_parsed_correctly :: Spec
