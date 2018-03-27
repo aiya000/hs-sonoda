@@ -74,11 +74,18 @@ parseType = parseIt typeParser
 exprParser :: CodeParsing m => m Expr
 exprParser = ExprAtomic <$> atomicValParser
          <|> lambdaParser
-         <|> applicationParser
          <|> ExprSyntax <$> syntaxParser
-         <|> ExprIdent  <$> identifierParser
          <|> P.parens exprParser
+         <|> applicationParser
   where
+    -- A parser of a term that is not an application
+    terminatorParser :: CodeParsing m => m Expr
+    terminatorParser = ExprAtomic <$> atomicValParser
+                   <|> lambdaParser
+                   <|> ExprSyntax <$> syntaxParser
+                   <|> ExprParens <$> P.parens exprParser
+                   <|> ExprIdent  <$> identifierParser
+
     lambdaParser :: CodeParsing m => m Expr
     lambdaParser = do
       P.symbolic '\\'
@@ -91,10 +98,11 @@ exprParser = ExprAtomic <$> atomicValParser
 
     applicationParser :: CodeParsing m => m Expr
     applicationParser = do
-      --er <- LambdaIdent <$> identifierParser <|> P.parens abstractionParser
-      --ee <- many $ LambdaIdent <$> identifierParser <|> 
-      --LambdaApply <$> lambdaParser <*> exprParser
-      pure $ ExprApply (ExprIdent "f") (ExprIdent "x":|[])
+      applyerOrLonlyIdentifier <- terminatorParser
+      maybeApplyee <- const Nothing <$> P.eof <|> Just <$> exprParser
+      case maybeApplyee of
+        Nothing      -> pure applyerOrLonlyIdentifier
+        Just applyee -> pure $ ExprApply applyerOrLonlyIdentifier applyee
 
 
 atomicValParser :: TokenParsing m => m AtomicVal
