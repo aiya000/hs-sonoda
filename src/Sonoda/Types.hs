@@ -4,7 +4,6 @@
 -- | Expose the AST of sonoda
 module Sonoda.Types where
 
-import Data.List.NonEmpty (NonEmpty(..))
 import Data.Semigroup ((<>))
 import Data.String.Here (i)
 
@@ -44,7 +43,7 @@ instance Show Syntax where
 -- | Please see a chapter 'The exression rules' of design/design.md
 data Expr = ExprAtomic AtomicVal
           | ExprLambda Identifier Type Expr -- ^ A lambda abstraction that is constructed by an Identifier, a type of the identifier, and the body
-          | ExprApply Expr (NonEmpty Expr) -- ^ Apply arguments to a function
+          | ExprApply Expr Expr -- ^ Apply an argument to a function
           | ExprSyntax Syntax
           | ExprIdent Identifier
           | ExprParens Expr -- ^ "(" expr ")"
@@ -62,8 +61,9 @@ instance Show Expr where
   show (ExprLambda n t x) = [i|\\${n}:${show t}.${show x}|]
   show (ExprParens x) = "(" <> show x <> ")"
   show (ExprIdent x) = x
-  show (ExprApply x (y:|ys)) = show' x <> " " <> unwords (map show' $ y:ys)
+  show (ExprApply x y) = show' x <> " " <> show' y
     where
+      -- With parentheses or without
       show' :: Expr -> String
       show' x@ExprLambda {} = "(" <> show x <> ")"
       show' x@ExprApply {}  = "(" <> show x <> ")"
@@ -71,9 +71,9 @@ instance Show Expr where
 
 infixl 9 \$
 
--- | Same as 'ExprApply\'' but a function
+-- | An alias to 'ExprApply'
 (\$) :: Expr -> Expr -> Expr
-x \$ y = ExprApply x (y:|[])
+x \$ y = ExprApply x y
 
 -- | Make a 'Nat' from `Int` as an 'Expr'
 nat :: Int -> Expr

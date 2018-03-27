@@ -5,7 +5,6 @@
 module Sonoda.ParserTest where
 
 import Control.Arrow ((>>>), (&&&))
-import Data.List.NonEmpty (NonEmpty(..))
 import Data.Semigroup ((<>))
 import Sonoda.Parser
 import Sonoda.Types
@@ -107,14 +106,14 @@ spec_lambda_forms_can_be_parsed_correctly = do
           thenClause
           elseClause
 
+    -- "equals m 0" maybe parsed as like "(equals m) 0", may not be "equals (m 0)"
     condClause :: Expr
-    condClause = ExprApply (ExprIdent "equal") (ExprIdent "m" :| [nat 0])
+    condClause = (ExprIdent "equal" \$ ExprIdent "m") \$ nat 0
     thenClause :: Expr
     thenClause = ExprIdent "n"
     elseClause :: Expr
-    elseClause = ExprApply (ExprIdent "plus") $
-                  (ExprIdent "succ" \$ ExprIdent "n" )
-                  :| [ExprIdent "pred" \$ ExprIdent "m"]
+    elseClause = (ExprIdent "plus" \$ (ExprIdent "succ" \$ ExprIdent "n" ))
+                                   \$ (ExprIdent "pred" \$ ExprIdent "m")
 
 
 --spec_syntax_can_be_parsed_correctly :: Spec
