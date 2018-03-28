@@ -124,8 +124,16 @@ spec_lambda_forms_can_be_parsed_correctly = do
                                    \$ (ExprIdent "pred" \$ ExprIdent "m")
 
 
---spec_syntax_can_be_parsed_correctly :: Spec
---spec_syntax_can_be_parsed_correctly =
---  describe "if" $ do
---    it "can be parsed with any arguments" $ do
---      parseExpr "if (
+spec_syntax_can_be_parsed_correctly :: Spec
+spec_syntax_can_be_parsed_correctly =
+  describe "if" $
+    it "with basic terms" $ do
+      parseExpr "if True then 10 else 20" `shouldBeParsedTo`
+        if_ (bool True) (nat 10)
+                        (nat 20)
+      parseExpr "if isZero 0 then 10 else 20" `shouldBeParsedTo`
+        if_ (ExprIdent "isZero" \$ nat 0) (nat 10)
+                                          (nat 20)
+      parseExpr "if False then succ 0 else pred 1" `shouldBeParsedTo`
+        if_ (bool False) (ExprIdent "succ" \$ nat 0)
+                         (ExprIdent "pred" \$ nat 1)

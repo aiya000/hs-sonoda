@@ -75,9 +75,13 @@ infixl 9 \$
 (\$) :: Expr -> Expr -> Expr
 x \$ y = ExprApply x y
 
--- | Make a 'Nat' from `Int` as an 'Expr'
+-- | Make an 'Expr' from an `Int` as a 'Nat'
 nat :: Int -> Expr
 nat = ExprAtomic . TermNat . Nat
+
+-- | Make an 'Expr' from a `Bool`
+bool :: Bool -> Expr
+bool = ExprAtomic . TermBool
 
 -- | Make a 'If' syntax as an 'Expr'
 if_ :: Expr -> Expr -> Expr -> Expr
