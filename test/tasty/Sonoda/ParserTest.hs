@@ -47,6 +47,13 @@ prop_identifiers_can_be_parsed_correctly :: CamelName -> Bool
 prop_identifiers_can_be_parsed_correctly (unCamelName &&& (unCamelName >>> T.unpack) -> (ident, ident'))
   = parseExpr ident ^== ExprIdent ident'
 
+spec_keyword_prefix_identifiers_can_be_parsed_correctly :: Spec
+spec_keyword_prefix_identifiers_can_be_parsed_correctly =
+  it "identifiers like `if_`, `then000`, `else06210800` are valid identifiers" $ do
+    parseExpr "if_"          `shouldBeParsedTo` ExprIdent "if_"
+    parseExpr "then000"      `shouldBeParsedTo` ExprIdent "then000"
+    parseExpr "else06210800" `shouldBeParsedTo` ExprIdent "else06210800"
+
 
 spec_types_can_be_parsed_correctly :: Spec
 spec_types_can_be_parsed_correctly = do
