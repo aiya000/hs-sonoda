@@ -15,6 +15,7 @@ import Test.SmallCheck.Series (NonNegative(..))
 import Test.Tasty.Hspec (Spec)
 import qualified Data.Text as T
 
+{-# ANN module ("HLint: ignore Use camelCase" :: String) #-}
 
 -- |
 -- Expect the `Either SomeException a` is `Right`,

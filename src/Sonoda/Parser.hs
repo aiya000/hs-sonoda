@@ -3,7 +3,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ImplicitParams #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -19,10 +18,11 @@ module Sonoda.Parser
 import Control.Applicative ((<|>))
 import Control.Exception.Safe (MonadThrow, throw, Exception(..), SomeException, StringException(..))
 import Data.ByteString.UTF8 (ByteString)
+import Data.Functor (($>))
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Text (Text)
 import GHC.Stack (HasCallStack)
-import Sonoda.Types hiding ((~>))
+import Sonoda.Types
 import Text.Parser.Token (TokenParsing)
 import Text.Trifecta.Delta (HasDelta(..))
 import Text.Trifecta.Parser (Parser, parseString)
@@ -112,11 +112,11 @@ atomicValParser = natValParser <|> boolValParser <|> unitValParser
     natValParser = TermNat <$> natural'
 
     boolValParser :: TokenParsing m => m AtomicVal
-    boolValParser =  (P.textSymbol "True"  *> pure (TermBool True))
-                 <|> (P.textSymbol "False" *> pure (TermBool False))
+    boolValParser =  (P.textSymbol "True"  $> TermBool True)
+                 <|> (P.textSymbol "False" $> TermBool False)
 
     unitValParser :: TokenParsing m => m AtomicVal
-    unitValParser = P.textSymbol "Unit" *> pure TermUnit
+    unitValParser = P.textSymbol "Unit" $> TermUnit
 
 identifierParser :: TokenParsing m => m Identifier
 identifierParser = do
@@ -143,9 +143,9 @@ syntaxParser = ifParser
 atomicTypeParser :: CodeParsing m => m Type
 atomicTypeParser = natTypeParser <|> boolTypeParser <|> unitTypeParser
   where
-    natTypeParser  = P.textSymbol "Nat"  *> pure natT
-    boolTypeParser = P.textSymbol "Bool" *> pure boolT
-    unitTypeParser = P.textSymbol "Unit" *> pure unitT
+    natTypeParser  = P.textSymbol "Nat"  $> natT
+    boolTypeParser = P.textSymbol "Bool" $> boolT
+    unitTypeParser = P.textSymbol "Unit" $> unitT
 
 -- | A parser of types
 typeParser :: CodeParsing m => m Type
