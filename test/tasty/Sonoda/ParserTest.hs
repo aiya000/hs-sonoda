@@ -50,9 +50,9 @@ prop_identifiers_can_be_parsed_correctly (unCamelName &&& (unCamelName >>> T.unp
 
 spec_keyword_prefix_identifiers_can_be_parsed_correctly :: Spec
 spec_keyword_prefix_identifiers_can_be_parsed_correctly =
-  it "identifiers like `if_`, `then000`, `else06210800` are valid identifiers" $ do
+  it "identifiers like `if_`, `thenTrue`, `else06210800` are valid identifiers" $ do
     parseExpr "if_"          `shouldBeParsedTo` ExprIdent "if_"
-    parseExpr "then000"      `shouldBeParsedTo` ExprIdent "then000"
+    parseExpr "thenTrue"     `shouldBeParsedTo` ExprIdent "thenTrue"
     parseExpr "else06210800" `shouldBeParsedTo` ExprIdent "else06210800"
 
 
