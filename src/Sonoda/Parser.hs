@@ -23,6 +23,7 @@ import Data.List.NonEmpty (NonEmpty(..))
 import Data.Text (Text)
 import GHC.Stack (HasCallStack)
 import Sonoda.Types
+import Text.Parser.Combinators (Parsing)
 import Text.Parser.Token (TokenParsing)
 import Text.Trifecta.Delta (HasDelta(..))
 import Text.Trifecta.Parser (Parser, parseString)
@@ -73,18 +74,18 @@ parseType = parseIt typeParser
 -- | A parser of expressions
 exprParser :: CodeParsing m => m Expr
 exprParser = ExprAtomic <$> atomicValParser
-         <|> lambdaParser
-         <|> ExprSyntax <$> syntaxParser
-         <|> P.parens exprParser
-         <|> applicationParser
+        <<|> lambdaParser
+        <<|> ExprSyntax <$> syntaxParser
+        <<|> P.parens exprParser
+        <<|> applicationParser
   where
     -- A parser of a term that is not an application
     terminatorParser :: CodeParsing m => m Expr
     terminatorParser = ExprAtomic <$> atomicValParser
-                   <|> lambdaParser
-                   <|> ExprSyntax <$> syntaxParser
-                   <|> ExprParens <$> P.parens exprParser
-                   <|> ExprIdent  <$> identifierParser
+                  <<|> lambdaParser
+                  <<|> ExprSyntax <$> syntaxParser
+                  <<|> ExprParens <$> P.parens exprParser
+                  <<|> ExprIdent  <$> identifierParser
 
     lambdaParser :: CodeParsing m => m Expr
     lambdaParser = do
@@ -122,7 +123,7 @@ identifierParser :: TokenParsing m => m Identifier
 identifierParser = do
   _  <- P.whiteSpace
   x  <- P.lower
-  xs <- P.many $ P.upper <|> P.lower <|> P.digit
+  xs <- P.many $ P.upper <|> P.lower <|> P.digit <|> P.char '_'
   _  <- P.whiteSpace
   pure (x:xs)
 
@@ -164,6 +165,13 @@ typeParser = normalize <$> typeParser'
 
     innerTypeParser :: CodeParsing m => m Type
     innerTypeParser = TypeParens <$> P.parens typeParser
+
+
+-- | Backtrack a parser of the left if it is failed
+(<<|>) :: Parsing m => m a -> m a -> m a
+p <<|> q = P.try p <|> q
+
+infixl 3 <<|>
 
 
 -- | Similar to 'natural', but take 'Nat'
