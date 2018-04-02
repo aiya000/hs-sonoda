@@ -78,8 +78,28 @@ exprParser = ExprAtomic <$> atomicValParser
         <<|> ExprSyntax <$> syntaxParser
         <<|> P.parens exprParser
         <<|> applicationParser
+
+-- | A parser for lambda abstractions
+lambdaParser :: CodeParsing m => m Expr
+lambdaParser = do
+  P.symbolic '\\'
+  n <- identifierParser
+  P.colon
+  t <- typeParser
+  P.dot
+  x <- exprParser
+  pure $ ExprLambda n t x
+
+-- | A parser for function applications
+applicationParser :: CodeParsing m => m Expr
+applicationParser = do
+  applyerOrLonlyIdentifier <- terminatorParser
+  maybeApplyee <- const Nothing <$> P.eof <|> Just <$> exprParser
+  case maybeApplyee of
+    Nothing      -> pure applyerOrLonlyIdentifier
+    Just applyee -> pure $ ExprApply applyerOrLonlyIdentifier applyee
   where
-    -- A parser of a term that is not an application
+    -- A parser for terms that is not an application
     terminatorParser :: CodeParsing m => m Expr
     terminatorParser = ExprAtomic <$> atomicValParser
                   <<|> lambdaParser
@@ -87,25 +107,7 @@ exprParser = ExprAtomic <$> atomicValParser
                   <<|> ExprParens <$> P.parens exprParser
                   <<|> ExprIdent  <$> identifierParser
 
-    lambdaParser :: CodeParsing m => m Expr
-    lambdaParser = do
-      P.symbolic '\\'
-      n <- identifierParser
-      P.colon
-      t <- typeParser
-      P.dot
-      x <- exprParser
-      pure $ ExprLambda n t x
-
-    applicationParser :: CodeParsing m => m Expr
-    applicationParser = do
-      applyerOrLonlyIdentifier <- terminatorParser
-      maybeApplyee <- const Nothing <$> P.eof <|> Just <$> exprParser
-      case maybeApplyee of
-        Nothing      -> pure applyerOrLonlyIdentifier
-        Just applyee -> pure $ ExprApply applyerOrLonlyIdentifier applyee
-
-
+-- | A parser for primitive values
 atomicValParser :: TokenParsing m => m AtomicVal
 atomicValParser = natValParser <|> boolValParser <|> unitValParser
   where
@@ -119,6 +121,7 @@ atomicValParser = natValParser <|> boolValParser <|> unitValParser
     unitValParser :: TokenParsing m => m AtomicVal
     unitValParser = P.textSymbol "Unit" $> TermUnit
 
+-- | A parser for variable names
 identifierParser :: TokenParsing m => m Identifier
 identifierParser = do
   _  <- P.whiteSpace
@@ -127,6 +130,7 @@ identifierParser = do
   _  <- P.whiteSpace
   pure (x:xs)
 
+-- | A parser for syntaxes
 syntaxParser :: CodeParsing m => m Syntax
 syntaxParser = ifParser
   where
@@ -141,14 +145,7 @@ syntaxParser = ifParser
       pure $ If x y z
 
 
-atomicTypeParser :: CodeParsing m => m Type
-atomicTypeParser = natTypeParser <|> boolTypeParser <|> unitTypeParser
-  where
-    natTypeParser  = P.textSymbol "Nat"  $> natT
-    boolTypeParser = P.textSymbol "Bool" $> boolT
-    unitTypeParser = P.textSymbol "Unit" $> unitT
-
--- | A parser of types
+-- | A parser for types
 typeParser :: CodeParsing m => m Type
 typeParser = normalize <$> typeParser'
   where
@@ -165,6 +162,14 @@ typeParser = normalize <$> typeParser'
 
     innerTypeParser :: CodeParsing m => m Type
     innerTypeParser = TypeParens <$> P.parens typeParser
+
+-- | A parser for embedded primitive types
+atomicTypeParser :: CodeParsing m => m Type
+atomicTypeParser = natTypeParser <|> boolTypeParser <|> unitTypeParser
+  where
+    natTypeParser  = P.textSymbol "Nat"  $> natT
+    boolTypeParser = P.textSymbol "Bool" $> boolT
+    unitTypeParser = P.textSymbol "Unit" $> unitT
 
 
 -- | Backtrack a parser of the left if it is failed
