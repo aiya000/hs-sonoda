@@ -84,6 +84,7 @@ spec_lambda_forms_can_be_parsed_correctly = do
     parseExpr "\\n:Nat.n"  `shouldBeParsedTo` trivial "n" natT
     parseExpr "\\x:Bool.x" `shouldBeParsedTo` trivial "x" boolT
     parseExpr "\\x:Unit.x" `shouldBeParsedTo` trivial "x" unitT
+    parseExpr "\\x:Unit.(x)" `shouldBeParsedTo` ExprLambda "x" unitT (ExprParens $ ExprIdent "x")
     parseExpr "\\s:Unit -> Unit.\\z:Unit.z" `shouldBeParsedTo` churchNum "s" "z" 0
     parseExpr "\\s:Unit -> Unit.\\z:Unit.s z" `shouldBeParsedTo` churchNum "s" "z" 1
     parseExpr "\\s:Unit -> Unit.\\z:Unit.s (s z)" `shouldBeParsedTo` churchNum "s" "z" 2
