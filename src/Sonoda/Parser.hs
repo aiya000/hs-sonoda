@@ -23,6 +23,7 @@ import Data.List.NonEmpty (NonEmpty(..))
 import Data.Text (Text)
 import GHC.Stack (HasCallStack)
 import Sonoda.Types
+import Text.Parser.Combinators ((<?>))
 import Text.Parser.Token (TokenParsing)
 import Text.Trifecta.Delta (HasDelta(..))
 import Text.Trifecta.Parser (Parser, parseString)
@@ -73,14 +74,14 @@ parseType = parseIt typeParser
 -- | A parser of expressions
 exprParser :: CodeParsing m => m Expr
 exprParser = ExprAtomic <$> atomicValParser
-        <|> lambdaParser
-        <|> ExprSyntax <$> syntaxParser
-        <|> P.parens exprParser
-        <|> applicationParser
+         <|> lambdaParser
+         <|> ExprSyntax <$> syntaxParser
+         <|> P.parens exprParser
+         <|> applicationParser
 
 -- | A parser for lambda abstractions
 lambdaParser :: CodeParsing m => m Expr
-lambdaParser = P.try $ do
+lambdaParser = P.try . (<?> "lambda abstraction") $ do
   P.symbolic '\\'
   n <- identifierParser
   P.colon
@@ -91,20 +92,20 @@ lambdaParser = P.try $ do
 
 -- | A parser for function applications
 applicationParser :: CodeParsing m => m Expr
-applicationParser = P.try $ do
-  applyerOrLonlyIdentifier <- terminatorParser
+applicationParser = P.try . (<?> "application") $ do
+  first        <- terminatorParser
   maybeApplyee <- const Nothing <$> P.eof <|> Just <$> exprParser
   case maybeApplyee of
-    Nothing      -> pure applyerOrLonlyIdentifier
-    Just applyee -> pure $ ExprApply applyerOrLonlyIdentifier applyee
+    Nothing      -> pure first
+    Just applyee -> pure $ ExprApply first applyee
   where
     -- A parser for terms that is not an application
     terminatorParser :: CodeParsing m => m Expr
     terminatorParser = ExprAtomic <$> atomicValParser
-                  <|> lambdaParser
-                  <|> ExprSyntax <$> syntaxParser
-                  <|> ExprParens <$> P.parens exprParser
-                  <|> ExprIdent  <$> identifierParser
+                   <|> lambdaParser
+                   <|> ExprSyntax <$> syntaxParser
+                   <|> ExprParens <$> P.parens exprParser
+                   <|> ExprIdent  <$> identifierParser
 
 -- | A parser for primitive values
 atomicValParser :: TokenParsing m => m AtomicVal
@@ -122,7 +123,7 @@ atomicValParser = natValParser <|> boolValParser <|> unitValParser
 
 -- | A parser for variable names
 identifierParser :: TokenParsing m => m Identifier
-identifierParser = P.try $ do
+identifierParser = P.try . (<?> "identifier") $ do
   _  <- P.whiteSpace
   x  <- P.lower
   xs <- P.many $ P.upper <|> P.lower <|> P.digit <|> P.char '_'
