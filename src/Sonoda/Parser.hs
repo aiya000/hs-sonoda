@@ -76,7 +76,7 @@ exprParser :: CodeParsing m => m Expr
 exprParser = ExprAtomic <$> atomicValParser
          <|> lambdaParser
          <|> ExprSyntax <$> syntaxParser
-         <|> P.parens exprParser
+         <|> ExprParens <$> P.parens exprParser
          <|> applicationParser
 
 -- | A parser for lambda abstractions
