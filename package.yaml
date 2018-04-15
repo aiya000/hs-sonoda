@@ -20,12 +20,10 @@ ghc-options:
 dependencies:
   - base >= 4.7 && < 5
   - here
-  - parsers
   - safe-exceptions
   - safe-exceptions-checked
   - template-haskell
   - text
-  - trifecta
   - utf8-string
 
 library:
