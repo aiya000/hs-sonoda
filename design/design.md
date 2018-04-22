@@ -17,34 +17,34 @@ All expression are represented as this.
 -->
 
 ```
-lowerAscChar <- "a" / .. / "z"
-upperAscChar <- "A" / .. / "Z"
+lowerAscChar -> "a" | .. | "z"
+upperAscChar -> "A" | .. | "Z"
 
 --
 
-atomicVal <- natVal / boolVal / unitVal
-natVal    <- "0" / "1" / "2" / ..
-boolVal   <- "True" / "False"
-unitVal   <- "Unit"
+atomicVal -> natVal | boolVal | unitVal
+natVal    -> "0" | "1" | "2" | ..
+boolVal   -> "True" | "False"
+unitVal   -> "Unit"
 
 -- Any terms
-expr <- atomicVal
-      / syntax
-      / "\" identifier ":" type "." expr -- lambda abstractions
-      / "(" expr ")"
-      / identifier
-      / expr expr -- function applications
+expr -> atomicVal
+      | syntax
+      | "\" identifier ":" type "." expr -- lambda abstractions
+      | "(" expr ")"
+      | identifier
+      | expr expr -- function applications
 
-identifier <- !lowerAscChar (lowerAscChar / upperAscChar)* -- variables
+identifier -> lowerAscChar [lowerAscChar upperAscChar]* -- variables
 
-syntax <- if
-if <- "if" expr "then" expr "else" expr
+syntax -> if
+if -> "if" expr "then" expr "else" expr
 
 --
 
-type <- atomicType
-      / type "->" type -- function types (lambda caluculus types)
-atomicType <- "Nat" / "Bool" / "Unit"
+type -> atomicType
+      | type "->" type -- function types (lambda caluculus types)
+atomicType -> "Nat" | "Bool" | "Unit"
 ```
 
 
