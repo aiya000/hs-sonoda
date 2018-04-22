@@ -35,7 +35,7 @@ expr -> atomicVal
       | identifier
       | expr expr -- function applications
 
-identifier -> lowerAscChar [lowerAscChar upperAscChar]* -- variables
+identifier -> [lowerAscChar "_"] [lowerAscChar upperAscChar "_"]* -- variables
 
 syntax -> if
 if -> "if" expr "then" expr "else" expr
