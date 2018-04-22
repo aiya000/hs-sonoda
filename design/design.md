@@ -27,20 +27,18 @@ natVal    <- "0" / "1" / "2" / ..
 boolVal   <- "True" / "False"
 unitVal   <- "Unit"
 
--- Non atomic terms
+-- Any terms
 expr <- atomicVal
       / syntax
-      / lambda
+      / "\" identifier ":" type "." expr -- lambda abstractions
       / "(" expr ")"
+      / identifier
+      / expr expr -- function applications
 
 identifier <- !lowerAscChar (lowerAscChar / upperAscChar)* -- variables
-lambda <- expr
-        / identifier
-        / "\" identifier ":" type "." expr -- lambda abstractions
-        / lambda expr                      -- function applications
 
-if <- "if" expr "then" expr "else" expr
 syntax <- if
+if <- "if" expr "then" expr "else" expr
 
 --
 
