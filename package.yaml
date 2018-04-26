@@ -18,8 +18,10 @@ ghc-options:
   - -fprint-explicit-kinds
 
 dependencies:
+  - array
   - base >= 4.7 && < 5
   - here
+  - safe
   - safe-exceptions
   - safe-exceptions-checked
   - template-haskell
