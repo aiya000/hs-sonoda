@@ -11,7 +11,7 @@ import Sonoda.Types
 %name parseExpr
 %tokentype { Token }
 %monad { Either String }
-%error { error "Parse error" }
+%error { (\_ -> Left "Parse error") }
 
 %token
   nat      { TokenANat $$         }
