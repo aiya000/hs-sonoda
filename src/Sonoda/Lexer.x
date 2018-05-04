@@ -1,4 +1,6 @@
 {
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
+
 module Sonoda.Lexer
   ( lex
   ) where
@@ -11,23 +13,30 @@ import Sonoda.Types.Lexer
 
 %wrapper "monad"
 
+$digit = 0-9
+$alpha = [a-zA-Z]
+
 tokens :-
   $white+ ;
-  [1-9][0-9]* { giveOrErr "a nat" TokenANat            }
-  "->"        { give TokenArrow                        }
-  \\          { give TokenBackslash                    }
-  \.          { give TokenDot                          }
-  :           { give TokenColon                        }
-  \(          { give TokenParensBegin                  }
-  \)          { give TokenParensEnd                    }
-  [a-zA-Z_]+  { giveOrErr "an identifier" TokenAnIdent }
+  $digit+                         { giveANat              }
+  "->"                            { give TokenArrow       }
+  \\                              { give TokenBackslash   }
+  \.                              { give TokenDot         }
+  \:                              { give TokenColon       }
+  \(                              { give TokenParensBegin }
+  \)                              { give TokenParensEnd   }
+  [$alpha \_] [$alpha \_ $digit]* { giveAnIdent           }
 
 {
-giveOrErr :: Read a => String -> (a -> Token) -> AlexAction [Token]
-giveOrErr name constr = \(_, _, _, got) _ -> do
+giveANat :: AlexAction [Token]
+giveANat = \(_, _, _, got) _ ->
   case readMay got of
-    Nothing -> alexError $ "a condition of " <> name <> " seems an invalid with: `" <> got <> "`"
-    Just x  -> alexMonadScan >>= pure . (constr x:)
+    Nothing -> alexError $ "a gotten number seems invalid: `" <> got <> "`"
+    Just x  -> alexMonadScan >>= pure . (TokenANat x:)
+
+giveAnIdent :: AlexAction [Token]
+giveAnIdent = \(_, _, _, got) _ ->
+  alexMonadScan >>= pure . (TokenAnIdent got:)
 
 give :: Token -> AlexAction [Token]
 give x = \_ _ -> do
@@ -39,5 +48,9 @@ alexEOF = pure [TokenEof]
 
 -- | Lex it, but give a `Left` if the lex is failed
 lex :: String -> Either String [Token]
-lex x = runAlex x $ alexMonadScan
+lex x = fmap removeEOF . runAlex x $ alexMonadScan
+  where
+    removeEOF :: [Token] -> [Token]
+    removeEOF xs | last xs == TokenEof = init xs
+                 | otherwise           = xs
 }
