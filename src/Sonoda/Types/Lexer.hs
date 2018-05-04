@@ -11,4 +11,4 @@ data Token = TokenANat Int
            | TokenParensEnd
            | TokenAnIdent String
            | TokenEof -- ^ For only alex's `alexEOF`
-  deriving (Show)
+  deriving (Show, Eq)
