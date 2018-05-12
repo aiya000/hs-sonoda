@@ -9,5 +9,8 @@ packages:
     commit: e14121f40286003c1ac7aef84b2b4cb594d5567
 extra-deps:
 - random-names-0.1.0.0
+- rio-0.1.1.0
 - tasty-discover-4.2.0
+- typed-process-0.2.2.0
+- unliftio-0.2.7.0
 resolver: lts-10.9

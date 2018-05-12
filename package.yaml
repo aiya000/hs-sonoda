@@ -11,21 +11,65 @@ synopsis: an implementation of simply typed lambda calculus
 
 ghc-options:
   - -Wall
+  - -Wcompat
+  - -Wincomplete-record-updates
+  - -Wincomplete-uni-patterns
   - -Wno-name-shadowing
-  - -Wno-unused-do-bind
   - -Wno-orphans
-  - -fprint-potential-instances
+  - -Wno-unused-do-bind
+  - -Wredundant-constraints
   - -fprint-explicit-kinds
+  - -fprint-potential-instances
+
+default-extensions:
+  - AutoDeriveTypeable
+  - BangPatterns
+  - BinaryLiterals
+  - ConstraintKinds
+  - DataKinds
+  - DefaultSignatures
+  - DeriveDataTypeable
+  - DeriveFoldable
+  - DeriveFunctor
+  - DeriveGeneric
+  - DeriveTraversable
+  - DoAndIfThenElse
+  - EmptyDataDecls
+  - ExistentialQuantification
+  - FlexibleContexts
+  - FlexibleInstances
+  - FunctionalDependencies
+  - GADTs
+  - GeneralizedNewtypeDeriving
+  - InstanceSigs
+  - KindSignatures
+  - LambdaCase
+  - MultiParamTypeClasses
+  - MultiWayIf
+  - NamedFieldPuns
+  - NoImplicitPrelude
+  - OverloadedStrings
+  - PartialTypeSignatures
+  - PatternGuards
+  - PolyKinds
+  - RankNTypes
+  - RecordWildCards
+  - ScopedTypeVariables
+  - StandaloneDeriving
+  - TupleSections
+  - TypeFamilies
+  - TypeSynonymInstances
+  - ViewPatterns
 
 dependencies:
   - array
   - base >= 4.7 && < 5
   - here
+  - rio
   - safe
   - safe-exceptions
   - safe-exceptions-checked
   - template-haskell
-  - text
   - utf8-string
 
 library:
