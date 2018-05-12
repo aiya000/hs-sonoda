@@ -63,8 +63,10 @@ default-extensions:
 
 dependencies:
   - array
+  - attoparsec
   - base >= 4.7 && < 5
   - here
+  - lens
   - rio
   - safe
   - safe-exceptions
