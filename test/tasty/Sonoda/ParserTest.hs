@@ -7,15 +7,17 @@ module Sonoda.ParserTest where
 import Control.Arrow ((>>>))
 import Control.Monad ((<=<))
 import Data.Semigroup ((<>))
+import RIO
 import Sonoda.Types
 import System.Random.NameCase (CamelName(..))
 import Test.Hspec (describe, it)
 import Test.Hspec.Expectations (shouldBe)
 import Test.SmallCheck.Series (NonNegative(..))
 import Test.Tasty.Hspec (Spec)
-import qualified Data.Text as T
+import qualified RIO.Text as T
 import qualified Sonoda.Lexer as SL
 import qualified Sonoda.Parser as SP
+import qualified Sonoda.Types as ST
 
 {-# ANN module ("HLint: ignore Use camelCase" :: String) #-}
 
@@ -54,7 +56,7 @@ identicalAbst x t = ExprLambda x t $ ExprIdent x
 spec_lambda_abstractions_can_be_parsed :: Spec
 spec_lambda_abstractions_can_be_parsed = do
   it "abstractions" $ do
-    readExpr "\\n:Nat.10" `shouldBe` Right (ExprLambda "n" natT $ nat 10)
+    readExpr "\\n:Nat.10" `shouldBe` Right (ExprLambda "n" natT $ ST.nat 10)
     readExpr "\\n:Nat.n"  `shouldBe` Right (identicalAbst "n" natT)
     readExpr "\\x:Bool.x" `shouldBe` Right (identicalAbst "x" boolT)
     readExpr "\\x:Unit.x" `shouldBe` Right (identicalAbst "x" unitT)
@@ -83,7 +85,7 @@ spec_function_applications_can_be_parsed :: Spec
 spec_function_applications_can_be_parsed = do
   it "applications" $ do
     let t = ExprParens $ identicalAbst "x" natT
-    readExpr "(\\x:Nat.x) 10" `shouldBe` Right (t `ExprApply` nat 10)
+    readExpr "(\\x:Nat.x) 10" `shouldBe` Right (t `ExprApply` ST.nat 10)
   it "real world codes" $
     readExpr code `shouldBe` Right exprOfCode
   where
@@ -101,7 +103,7 @@ spec_function_applications_can_be_parsed = do
 
     -- "equals m 0" maybe parsed as like "(equals m) 0", may not be "equals (m 0)"
     condClause :: Expr
-    condClause = (ExprIdent "equal" `ExprApply` ExprIdent "m") `ExprApply` nat 0
+    condClause = (ExprIdent "equal" `ExprApply` ExprIdent "m") `ExprApply` ST.nat 0
     thenClause :: Expr
     thenClause = ExprIdent "n"
     elseClause :: Expr
@@ -113,13 +115,13 @@ spec_syntax_can_be_parsed =
   describe "if" $
     it "with basic terms" $ do
       readExpr "if True then 10 else 20" `shouldBe`
-        Right (if_ (bool True) (nat 10)
-                               (nat 20))
+        Right (if_ (ST.bool True) (ST.nat 10)
+                               (ST.nat 20))
       readExpr "if isZero 0 then 10 else 20" `shouldBe`
-        Right (if_ (ExprIdent "isZero" `ExprApply` nat 0)
-                (nat 10)
-                (nat 20))
+        Right (if_ (ExprIdent "isZero" `ExprApply` ST.nat 0)
+                (ST.nat 10)
+                (ST.nat 20))
       readExpr "if False then succ 0 else pred 1" `shouldBe`
-        Right (if_ (bool False)
-                (ExprIdent "succ" `ExprApply` nat 0)
-                (ExprIdent "pred" `ExprApply` nat 1))
+        Right (if_ (ST.bool False)
+                (ExprIdent "succ" `ExprApply` ST.nat 0)
+                (ExprIdent "pred" `ExprApply` ST.nat 1))

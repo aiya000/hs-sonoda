@@ -1,4 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 -- | Expose the AST of sonoda
@@ -6,7 +5,7 @@ module Sonoda.Types.Parser where
 
 import Data.Semigroup ((<>))
 import Data.String.Here (i)
-
+import RIO
 
 {-@ Nat :: {x:Int | x >= 0} -> Nat @-}
 {-@ unNat :: Nat -> {x:Int | x >= 0} @-}

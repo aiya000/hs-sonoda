@@ -3,16 +3,16 @@
 -- | Expose for the lexer
 module Sonoda.LexerTest where
 
+import Control.Arrow ((>>>))
 import Prelude hiding (lex)
 import Sonoda.Lexer (lex)
-import Control.Arrow ((>>>))
 import Sonoda.Types
 import System.Random.NameCase (CamelName(..))
 import Test.Hspec (it)
 import Test.Hspec.Expectations (shouldBe)
 import Test.SmallCheck.Series (NonNegative(..))
 import Test.Tasty.Hspec (Spec)
-import qualified Data.Text as T
+import qualified RIO.Text as T
 
 {-# ANN module ("HLint: ignore Use camelCase" :: String) #-}
 

@@ -5,6 +5,7 @@ module Sonoda.Parser
   ) where
 
 import Control.Exception.Safe (SomeException)
+import Prelude
 import Sonoda.Types
 }
 
