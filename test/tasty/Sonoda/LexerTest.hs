@@ -4,7 +4,7 @@
 module Sonoda.LexerTest where
 
 import Control.Arrow ((>>>))
-import Prelude hiding (lex)
+import RIO
 import Sonoda.Lexer (lex)
 import Sonoda.Types
 import System.Random.NameCase (CamelName(..))
@@ -55,5 +55,5 @@ spec_lambda_abstractions_can_be_lexed =
   it "lambda abstractions" $
     lex "\\x:Unit.10" `shouldBe` Right [ TokenBackslash, TokenAnIdent "x"
                                        , TokenColon, TokenAnIdent "Unit"
-                                       , TokenANat 10
+                                       , TokenDot, TokenANat 10
                                        ]

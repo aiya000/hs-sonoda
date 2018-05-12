@@ -26,5 +26,4 @@ cabal.project.local
 
 # End of https://www.gitignore.io/api/haskell
 sonoda.cabal
-src/Sonoda/Lexer.hs
 src/Sonoda/Parser.hs
