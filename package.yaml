@@ -67,6 +67,7 @@ dependencies:
   - base >= 4.7 && < 5
   - here
   - lens
+  - mtl
   - rio
   - safe
   - safe-exceptions
