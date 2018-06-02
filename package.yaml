@@ -68,6 +68,7 @@ dependencies:
   - here
   - lens
   - mtl
+  - prettyprinter
   - rio
   - safe
   - safe-exceptions
