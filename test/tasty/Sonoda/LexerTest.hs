@@ -30,10 +30,13 @@ spec_lexical_errors :: Spec
 spec_lexical_errors =
   describe "shows where it is failed" $ do
     -- NOTE: "<" is an invalid token
-    it "at a first token" $ do
-      let invalidIdent = "<"
-      lexAndFailure invalidIdent `shouldBe` Just (TokenPos 1 1)
-    it "on a code" $ do
+    it "with a trivial code" $ do
+      let code = "<"
+      lexAndFailure code `shouldBe` Just (TokenPos 1 1)
+    it "with a casual code" $ do
+      let code = "\\x:Nat.<at"
+      lexAndFailure code `shouldBe` Just (TokenPos 1 8)
+    it "with lines" $ do
       let code = [here|\x:T.
                       |  < x
                       |] & trimMargin '|'
