@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 -- | Expose for the lexer
@@ -6,8 +7,7 @@ module Sonoda.LexerTest where
 import Control.Arrow ((>>>))
 import Control.Lens ((^?), _Left, _Right)
 import Data.Function ((&))
-import Data.List.NonEmpty (NonEmpty(..))
-import Data.String.Here (here)
+import Data.String.Here (i, here)
 import RIO
 import Sonoda.Lexer (lex)
 import Sonoda.Types
@@ -16,7 +16,6 @@ import Test.Hspec (describe, it)
 import Test.Hspec.Expectations (shouldBe)
 import Test.SmallCheck.Series (NonNegative(..))
 import Test.Tasty.Hspec (Spec)
-import qualified Data.List.NonEmpty as NE
 import qualified RIO.Text as T
 
 {-# ANN module ("HLint: ignore Use camelCase" :: String) #-}
@@ -40,15 +39,16 @@ spec_lexical_errors =
                       |] & trimMargin '|'
       lexAndFailure code `shouldBe` Just (TokenPos 2 3)
   where
-    -- Apply a function if the taken list is not empty
-    safe :: (NonEmpty a -> [a]) -> [a] -> [a]
-    safe _ [] = []
-    safe f (x:xs) = f (x :| xs)
+    dropHead :: [a] -> [a]
+    dropHead [] = []
+    dropHead (_:xs) = xs
 
     trimMargin :: Char -> String -> String
-    trimMargin delim x = unlines . flip safe (lines x) $ \(firstLine:|tailLines) ->
-      let removeMargin = safe NE.tail . dropWhile (/= delim) -- remove before '|' and '|'
-      in firstLine : fmap removeMargin tailLines
+    trimMargin _ (lines -> []) = ""
+    trimMargin delim (lines -> (firstLine:tailLines)) =
+      let removeMargin = dropHead . dropWhile (/= delim) -- remove before '|' and '|'
+      in unlines $ firstLine : fmap removeMargin tailLines
+    trimMargin _ _ = error [i|${(__FILE__ :: String)}:L${(__LINE__ :: Int)}: fatal error! Sorry, please report an issue :(|]
 
 scprop_natVal_can_be_lexed :: NonNegative Int -> Bool
 scprop_natVal_can_be_lexed (NonNegative n) =
