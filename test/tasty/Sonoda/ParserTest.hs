@@ -5,7 +5,6 @@
 module Sonoda.ParserTest where
 
 import Control.Arrow ((>>>))
-import Control.Monad ((<=<))
 import Data.Semigroup ((<>))
 import RIO
 import Sonoda.Types
@@ -21,10 +20,11 @@ import qualified Sonoda.Types as ST
 
 {-# ANN module ("HLint: ignore Use camelCase" :: String) #-}
 
--- | Lex and parse a code
-readExpr :: String -> Either String Expr
-readExpr = SP.parseExpr <=< SL.lex
-
+-- |
+-- Execute the lexer and the parser with a code.
+-- If something is failed, return what fails and where it fails.
+readExpr :: String -> Either Failure Expr
+readExpr = SL.lex >=> SP.parseExpr
 
 scprop_natVal_can_be_parsed :: NonNegative Int -> Bool
 scprop_natVal_can_be_parsed (NonNegative n) =
