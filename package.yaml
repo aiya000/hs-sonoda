@@ -65,6 +65,7 @@ dependencies:
   - array
   - attoparsec
   - base >= 4.7 && < 5
+  - data-default
   - here
   - lens
   - mtl
