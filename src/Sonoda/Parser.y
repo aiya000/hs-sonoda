@@ -34,10 +34,10 @@ import Sonoda.Types
   '\\'     { (TokenBackslash, _)       }
   ':'      { (TokenColon, _)           }
   '.'      { (TokenDot, _)             }
-  ident    { (TokenAnIdent $$, _)      }
   "->"     { (TokenArrow, _)           }
   natType  { (TokenAnIdent "Nat", _)   }
   boolType { (TokenAnIdent "Bool", _)  }
+  ident    { (TokenAnIdent $$, _)      }
 
 %%
 
