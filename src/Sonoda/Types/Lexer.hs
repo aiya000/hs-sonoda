@@ -51,10 +51,10 @@ makeLensesFor
 -- and saves where is working at now.
 -- Please see 'runSonodaProcessor'.
 newtype SonodaProcessor a = SonodaProcessor
-  { unSonodaProcessor :: ExceptT String (State TokenPos) a
+  { unSonodaProcessor :: ExceptT Failure (State TokenPos) a
   } deriving ( Functor, Applicative, Monad
              , MonadState TokenPos
-             , MonadError String
+             , MonadError Failure
              )
 
 -- |
@@ -63,13 +63,9 @@ newtype SonodaProcessor a = SonodaProcessor
 -- notify a error cause (`String`) and where is failed ('TokenPos'),
 runSonodaProcessor :: SonodaProcessor a -> Either Failure a
 runSonodaProcessor = unSonodaProcessor
-                 >>> (runExceptT :: ExceptT String (State TokenPos) a -> State TokenPos (Either String a))
-                 >>> (flip runState def :: State TokenPos (Either String a) -> (Either String a, TokenPos))
-                 >>> intoLeft
-  where
-    intoLeft :: (Either String b, TokenPos) -> Either Failure b
-    intoLeft (Left x, y)  = Left $ Failure x y
-    intoLeft (Right x, _) = Right x
+                 >>> (runExceptT :: ExceptT Failure (State TokenPos) a -> State TokenPos (Either Failure a))
+                 >>> (flip runState def :: State TokenPos (Either Failure a) -> (Either Failure a, TokenPos))
+                 >>> fst
 
 -- | sonoda's lexemes
 data Token = TokenANat Int

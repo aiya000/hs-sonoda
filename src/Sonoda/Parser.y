@@ -72,8 +72,11 @@ AtomicType :: { AtomicType }
 
 {
 parseError :: ([(Token, TokenPos)], [String]) -> SonodaProcessor a
-parseError (((got, pos):_), expected) = throwError [i|${show $ pretty got} at ${show $ pretty pos}, but ${show expected} are expected.|]
-parseError (_, _)                     = throwError [i|${(__FILE__ :: String)}:L${show (__LINE__ :: Int)}: fatal error! Sorry, please report an issue :(|]
+parseError (((got, pos):_), expected) = throwError $ Failure [i|${show $ pretty got} at ${show $ pretty pos}, but ${expected} are expected.|] pos
+parseError (_, _)                     = error [i|parseError at ${(__FILE__ :: String)}:L${(__LINE__ :: Int)}: fatal error! Sorry, please report an issue :(|]
+-- ^ The type `[(Token, TokenPos)]` of this cannot be `NonEmpty (Token, TokenPos)`,
+--   because happy requires it.
+--   But it always has one or more elements.
 
 parseExpr :: [(Token, TokenPos)] -> Either Failure Expr
 parseExpr = runSonodaProcessor . exprParser

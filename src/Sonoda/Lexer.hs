@@ -74,7 +74,7 @@ rex input = do
       | isAnIdent got
           = continueToForwardWith (TokenAnIdent got, pos) (length got) rest
       | otherwise
-          = throwError [i|${(__FILE__ :: String)}:L${show (__LINE__ :: Int)}: An unknown lexeme is got (${got})|]
+          = throwError $ Failure [i|${(__FILE__ :: String)}:L${show (__LINE__ :: Int)}: An unknown lexeme is got (${got})|] pos
 
     isAnIdent :: String -> Bool
     isAnIdent (T.pack -> x) =
