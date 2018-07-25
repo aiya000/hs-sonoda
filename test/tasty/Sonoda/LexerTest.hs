@@ -7,9 +7,10 @@ module Sonoda.LexerTest where
 import Control.Arrow ((>>>))
 import Control.Lens ((^?), _Left, _Right)
 import Data.Function ((&))
-import Data.String.Here (i, here)
+import Data.String.Here (here)
 import RIO
 import Sonoda.Lexer (lex)
+import Sonoda.Test.Code (trimMargin)
 import Sonoda.Types
 import System.Random.NameCase (CamelName(..))
 import Test.Hspec (describe, it)
@@ -41,17 +42,6 @@ spec_lexical_errors =
                       |  < x
                       |] & trimMargin '|'
       lexAndFailure code `shouldBe` Just (TokenPos 2 3)
-  where
-    dropHead :: [a] -> [a]
-    dropHead [] = []
-    dropHead (_:xs) = xs
-
-    trimMargin :: Char -> String -> String
-    trimMargin _ (lines -> []) = ""
-    trimMargin delim (lines -> (firstLine:tailLines)) =
-      let removeMargin = dropHead . dropWhile (/= delim) -- remove before '|' and '|'
-      in unlines $ firstLine : fmap removeMargin tailLines
-    trimMargin _ _ = error [i|${(__FILE__ :: String)}:L${(__LINE__ :: Int)}: fatal error! Sorry, please report an issue :(|]
 
 scprop_natVal_can_be_lexed :: NonNegative Int -> Bool
 scprop_natVal_can_be_lexed (NonNegative n) =
