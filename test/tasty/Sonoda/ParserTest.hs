@@ -1,12 +1,15 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 -- | Expect to success the parsers with the lexers
 module Sonoda.ParserTest where
 
 import Control.Arrow ((>>>))
+import Control.Lens ((^?), _Left)
+import Control.Monad ((<=<))
 import Data.Semigroup ((<>))
+import Data.String.Here (here)
 import RIO
+import Sonoda.Test.Code (trimMargin)
 import Sonoda.Types
 import System.Random.NameCase (CamelName(..))
 import Test.Hspec (describe, it)
@@ -24,7 +27,19 @@ import qualified Sonoda.Types as ST
 -- Execute the lexer and the parser with a code.
 -- If something is failed, return what fails and where it fails.
 readExpr :: String -> Either Failure Expr
-readExpr = SL.lex >=> SP.parseExpr
+readExpr = SP.parseExpr <=< SL.lex
+
+spec_parse_errors :: Spec
+spec_parse_errors =
+  describe "shows where it is failed" $ do
+    -- These expects to be passed the lexing, and to be not passed the parsing
+    it "with a casual code" $
+      readExpr "\\x:Nat.Nat" ^? _Left . _where_ `shouldBe` Just (TokenPos 1 8)
+    it "with lines" $ do
+      let code = [here|\x:Nat.
+                      |  Nat
+                      |] & trimMargin '|'
+      readExpr code ^? _Left . _where_ `shouldBe` Just (TokenPos 2 3)
 
 scprop_natVal_can_be_parsed :: NonNegative Int -> Bool
 scprop_natVal_can_be_parsed (NonNegative n) =
