@@ -5,7 +5,7 @@ module Sonoda.Lexer
   ( lex
   ) where
 
-import Control.Lens ((<+=))
+import Control.Lens ((+=), (.=))
 import Control.Monad.State.Strict (get)
 import Control.Monad.Except (throwError)
 import Data.String.Here (i)
@@ -50,14 +50,15 @@ rex input = do
     -- Also go to the next line
     continueToBelow :: String -> SonodaProcessor [(Token, TokenPos)]
     continueToBelow rest = do
-      _lineNum <+= 1
+      _lineNum += 1
+      _colNum .= 1
       rex rest
 
     -- Take a length of a consumed token, and a rest input.
     -- Also go to the taken next column
     continueToForward :: Int -> String -> SonodaProcessor [(Token, TokenPos)]
     continueToForward n rest = do
-      _colNum <+= n
+      _colNum += n
       rex rest
 
     -- Take a got token, a position of the token,
@@ -65,7 +66,7 @@ rex input = do
     -- Also go to the taken next column
     continueToForwardWith :: (Token, TokenPos) -> Int -> String -> SonodaProcessor [(Token, TokenPos)]
     continueToForwardWith x n rest = do
-      _colNum <+= n
+      _colNum += n
       (x:) <$> rex rest
 
     identOrFail :: (String, String) -> TokenPos -> SonodaProcessor [(Token, TokenPos)]
