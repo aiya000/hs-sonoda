@@ -1,11 +1,12 @@
 {-# LANGUAGE QuasiQuotes #-}
 
--- | Expect to success the parsers with the lexers
+-- | Expect to success the parsers
 module Sonoda.ParserTest where
 
 import Control.Arrow ((>>>))
 import Control.Lens ((^?), _Left)
 import Control.Monad ((<=<))
+import Data.Default (def)
 import Data.Semigroup ((<>))
 import Data.String.Here (here)
 import RIO
@@ -23,12 +24,6 @@ import qualified Sonoda.Types as ST
 
 {-# ANN module ("HLint: ignore Use camelCase" :: String) #-}
 
--- |
--- Execute the lexer and the parser with a code.
--- If something is failed, return what fails and where it fails.
-readExpr :: String -> Either Failure Expr
-readExpr = SP.parseExpr <=< SL.lex
-
 spec_parse_errors :: Spec
 spec_parse_errors =
   describe "shows where it is failed" $ do
@@ -40,61 +35,107 @@ spec_parse_errors =
                       |  Nat
                       |] & trimMargin '|'
       readExpr code ^? _Left . _where_ `shouldBe` Just (TokenPos 2 3)
+  where
+    -- Execute the lexer and the parser with a code.
+    -- If something is failed, return what fails and where it fails.
+    readExpr :: String -> Either Failure Expr
+    readExpr = SP.parseExpr <=< SL.lex
+
+-- | Simular to 'SP.parseExpr', but the source and the result are without 'TokenPos'
+parseExpr :: [Token] -> Either Failure Expr
+parseExpr = SP.parseExpr . map (, def)
 
 scprop_natVal_can_be_parsed :: NonNegative Int -> Bool
 scprop_natVal_can_be_parsed (NonNegative n) =
-  readExpr (show n) == Right (ExprAtomic . TermNat $ Nat n)
+  parseExpr [TokenANat n] == Right (natExpr n)
+    where
+      natExpr = ExprAtomic . TermNat . Nat
 
 spec_boolVal_unitVal_can_be_parsed :: Spec
 spec_boolVal_unitVal_can_be_parsed = do
   it "True,False" $ do
-    readExpr "True"  `shouldBe` Right (ExprAtomic $ TermBool True)
-    readExpr "False" `shouldBe` Right (ExprAtomic $ TermBool False)
+    parseExpr [TokenAnIdent "True"] `shouldBe` Right (ExprAtomic $ TermBool True)
+    parseExpr [TokenAnIdent "False"] `shouldBe` Right (ExprAtomic $ TermBool False)
   it "Unit" $
-    readExpr "Unit" `shouldBe` Right (ExprAtomic TermUnit)
+    parseExpr [TokenAnIdent "Unit"] `shouldBe` Right (ExprAtomic TermUnit)
 
 prop_identifiers_can_be_parsed :: CamelName -> Bool
 prop_identifiers_can_be_parsed (unCamelName >>> T.unpack -> ident)
-  = readExpr ident == Right (ExprIdent ident)
-
-spec_keyword_prefix_identifiers_can_be_parsed :: Spec
-spec_keyword_prefix_identifiers_can_be_parsed =
-  it "keyword like identifiers are valid identifiers" $ do
-    readExpr "if_"          `shouldBe` Right (ExprIdent "if_")
-    readExpr "thenTrue"     `shouldBe` Right (ExprIdent "thenTrue")
-    readExpr "else06210800" `shouldBe` Right (ExprIdent "else06210800")
-
--- | Make a lambda abstraction that returns the argument immediately
-identicalAbst :: Identifier -> Type -> Expr
-identicalAbst x t = ExprLambda x t $ ExprIdent x
+  = parseExpr [TokenAnIdent ident] == Right (ExprIdent ident)
 
 spec_lambda_abstractions_can_be_parsed :: Spec
 spec_lambda_abstractions_can_be_parsed = do
-  it "abstractions" $ do
-    readExpr "\\n:Nat.10" `shouldBe` Right (ExprLambda "n" natT $ ST.nat 10)
-    readExpr "\\n:Nat.n"  `shouldBe` Right (identicalAbst "n" natT)
-    readExpr "\\x:Bool.x" `shouldBe` Right (identicalAbst "x" boolT)
-    readExpr "\\x:Unit.x" `shouldBe` Right (identicalAbst "x" unitT)
-    readExpr "\\x:Unit.(x)" `shouldBe` Right (ExprLambda "x" unitT . ExprParens $ ExprIdent "x")
-    readExpr "\\s:Unit -> Unit.\\z:Unit.z" `shouldBe` Right (churchNum "s" "z" 0)
-    readExpr "\\s:Unit -> Unit.\\z:Unit.s z" `shouldBe` Right (churchNum "s" "z" 1)
-    readExpr "\\s:Unit -> Unit.\\z:Unit.s (s z)" `shouldBe` Right (churchNum "s" "z" 2)
-    readExpr "\\x:Unit.x" `shouldBe` Right (identicalAbst "x" unitT)
-  describe "abstractions and types" $ do
-    it "atomic types" $ do
-      readExpr "\\x:Nat.x"  `shouldBe` Right (identicalAbst "x" natT)
-      readExpr "\\x:Bool.x" `shouldBe` Right (identicalAbst "x" boolT)
-      readExpr "\\x:Unit.x" `shouldBe` Right (identicalAbst "x" unitT)
-    it "arrow types" $ do
-        readExpr "\\x:Nat -> Nat.x" `shouldBe` Right (identicalAbst "x" $ natT ~> natT)
-        readExpr "\\x:Nat -> Bool -> Unit.x" `shouldBe` Right (identicalAbst "x" $ natT ~> boolT ~> unitT)
-        readExpr "\\x:(Nat -> Bool) -> Unit.x" `shouldBe` Right (identicalAbst "x" $ TypeParens (natT ~> boolT) ~> unitT)
+  it "basic abstractions" $ do
+    -- \n:Nat.10
+    parseExpr (tokensLambda "n" [tokenNat] [TokenANat 10])
+      `shouldBe` Right (ExprLambda "n" natT $ natE 10)
+    -- \x:Unit.x
+    parseExpr (tokensLambda "x" [tokenUnit] [TokenAnIdent "x"])
+      `shouldBe` Right (ExprLambda "x" unitT $ ExprIdent "x")
+    -- \x:Bool -> Bool.x
+    parseExpr (tokensLambda "x" [tokenBool, o, tokenBool] [TokenAnIdent "x"])
+      `shouldBe` Right (ExprLambda "x" (boolT ~> boolT) $ ExprIdent "x")
+    -- \x:Nat -> Bool -> Unit.x
+    parseExpr (tokensLambda "x" [tokenNat, o, tokenBool, o, tokenUnit] [TokenAnIdent "x"])
+      `shouldBe` Right (ExprLambda "x" (natT ~> boolT ~> unitT) $ ExprIdent "x")
+
+    -- \x:(Nat -> Bool) -> Unit.x
+    let f = tokensLambda "x"
+              [TokenParensBegin, tokenNat, o, tokenBool, TokenParensEnd, o, tokenUnit]
+              [TokenAnIdent "x"]
+        f' = ExprLambda "x"
+              (TypeParens (natT ~> boolT) ~> unitT)
+              $ ExprIdent "x"
+    parseExpr f `shouldBe` Right f'
+
+    -- \s:Unit -> Unit.\z:Unit.z
+    let zz   = tokensLambda "z" [tokenUnit] [TokenAnIdent "z"]
+        zero = tokensLambda "s" [tokenUnit, o, tokenUnit] zz
+    let zz'   = ExprLambda "z" unitT $ ExprIdent "x"
+        zero' = ExprLambda "s" (unitT ~> unitT) zz'
+    parseExpr zero `shouldBe` Right zero'
+
+  it "abstractions with removable notations" $ do
+    -- \x:Unit.((x))  ==>  \x:Unit.x
+    let f = tokensLambda "x" [tokenUnit]
+              [TokenParensBegin, TokenParensBegin, TokenAnIdent "x", TokenParensEnd, TokenParensEnd]
+        f' = ExprLambda "x" unitT
+              $ ExprIdent "x"
+    parseExpr f `shouldBe` Right f'
+    -- \x:Nat -> (Bool -> Unit).x  ==>  \x:Nat -> Bool -> Unit.x
+    let f1 = tokensLambda "x"
+                [tokenNat, o, TokenParensBegin, tokenBool, o, tokenUnit, TokenParensEnd]
+                [TokenAnIdent "x"]
+        f1' = ExprLambda "x"
+                (natT ~> boolT ~> unitT)
+                $ ExprIdent "x"
+    parseExpr f1 `shouldBe` Right f1'
   where
-    churchNum :: String -> String -> Int -> Expr
-    churchNum s z n =
-      let num = replicate n $ ExprIdent s
-      in ExprLambda s (unitT ~> unitT) . ExprLambda z unitT $
-          foldr ExprApply (ExprIdent z) num
+    -- Maybe, `tokenNat o tokenNat` looks like `tokenNat -> tokenNat`
+    o = TokenArrow
+
+    natE :: Int -> Expr
+    natE = ExprAtomic . TermNat . Nat
+
+    natT :: Type
+    natT = TypeAtomic TypeNat
+
+    boolT :: Type
+    boolT = TypeAtomic TypeBool
+
+    unitT :: Type
+    unitT = TypeAtomic TypeUnit
+
+    (~>) :: Type -> Type -> Type
+    (~>) = TypeArrow
+    infixr 9 ~>
+
+    tokenNat  = TokenAnIdent "Nat"
+    tokenUnit = TokenAnIdent "Unit"
+    tokenBool = TokenAnIdent "Bool"
+
+    tokensLambda :: String -> [Token] -> [Token] -> [Token]
+    tokensLambda ident type_ body = [TokenBackslash, TokenAnIdent ident, TokenColon] <> type_ <> [TokenDot] <> body
 
 spec_function_applications_can_be_parsed :: Spec
 spec_function_applications_can_be_parsed = do

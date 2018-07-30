@@ -68,25 +68,6 @@ instance Show Expr where
       show' x@ExprApply {}  = "(" <> show x <> ")"
       show' x = show x
 
-infixl 9 \$
-
--- | An alias to 'ExprApply'
-(\$) :: Expr -> Expr -> Expr
-x \$ y = ExprApply x y
-
--- | Make an 'Expr' from an `Int` as a 'Nat'
-nat :: Int -> Expr
-nat = ExprAtomic . TermNat . Nat
-
--- | Make an 'Expr' from a `Bool`
-bool :: Bool -> Expr
-bool = ExprAtomic . TermBool
-
--- | Make a 'If' syntax as an 'Expr'
-if_ :: Expr -> Expr -> Expr -> Expr
-if_ x y z = ExprSyntax $ If x y z
-
-
 -- | Please see 'Type'
 data AtomicType = TypeNat | TypeBool | TypeUnit
   deriving (Eq)
@@ -107,21 +88,3 @@ instance Show Type where
   show (TypeArrow (TypeArrow x y) z) = "(" <> show x <> " -> " <> show y <> ")" <> " -> " <> show z
   show (TypeArrow x y) = show x <> " -> " <> show y
   show (TypeParens x)  = "(" <> show x <> ")"
-
--- | An alias to 'TypeAtomic TypeNat'
-natT :: Type
-natT = TypeAtomic TypeNat
-
--- | An alias to 'TypeAtomic TypeBool'
-boolT :: Type
-boolT = TypeAtomic TypeBool
-
--- | An alias to 'TypeAtomic TypeUnit'
-unitT :: Type
-unitT = TypeAtomic TypeUnit
-
-infixr 9 ~>
-
--- | An alias to 'TypeArrow'
-(~>) :: Type -> Type -> Type
-(~>) = TypeArrow
