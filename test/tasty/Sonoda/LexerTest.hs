@@ -1,7 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE QuasiQuotes #-}
 
--- | Expose for the lexer
+-- | Test the lexer
 module Sonoda.LexerTest where
 
 import Control.Arrow ((>>>))
@@ -21,11 +21,11 @@ import qualified RIO.Text as T
 
 {-# ANN module ("HLint: ignore Use camelCase" :: String) #-}
 
-lexAndSuccess :: String -> Maybe [Token]
-lexAndSuccess x = lex x ^? _Right . to (fmap fst)
+lexToSuccess :: String -> Maybe [Token]
+lexToSuccess x = lex x ^? _Right . to (fmap fst)
 
-lexAndFailure :: String -> Maybe TokenPos
-lexAndFailure x = lex x ^? _Left . _where_
+lexToFailure :: String -> Maybe TokenPos
+lexToFailure x = lex x ^? _Left . _where_
 
 spec_lexical_errors :: Spec
 spec_lexical_errors =
@@ -33,53 +33,53 @@ spec_lexical_errors =
     -- NOTE: "<" is an invalid token
     it "with a trivial code" $ do
       let code = "<"
-      lexAndFailure code `shouldBe` Just (TokenPos 1 1)
+      lexToFailure code `shouldBe` Just (TokenPos 1 1)
     it "with a casual code" $ do
       let code = "\\x:Nat.<at"
-      lexAndFailure code `shouldBe` Just (TokenPos 1 8)
+      lexToFailure code `shouldBe` Just (TokenPos 1 8)
     it "with lines" $ do
       let code = [here|\x:T.
                       |  < x
                       |] & trimMargin '|'
-      lexAndFailure code `shouldBe` Just (TokenPos 2 3)
+      lexToFailure code `shouldBe` Just (TokenPos 2 3)
 
 scprop_natVal_can_be_lexed :: NonNegative Int -> Bool
 scprop_natVal_can_be_lexed (NonNegative n) =
-  lexAndSuccess (show n) == Just [TokenANat n]
+  lexToSuccess (show n) == Just [TokenANat n]
 
 spec_identifiers_can_be_lexed :: Spec
 spec_identifiers_can_be_lexed = do
   it "finite values" $ do
-    lexAndSuccess "True"  `shouldBe` Just [TokenAnIdent "True"]
-    lexAndSuccess "False" `shouldBe` Just [TokenAnIdent "False"]
-    lexAndSuccess "Unit"  `shouldBe` Just [TokenAnIdent "Unit"]
+    lexToSuccess "True"  `shouldBe` Just [TokenAnIdent "True"]
+    lexToSuccess "False" `shouldBe` Just [TokenAnIdent "False"]
+    lexToSuccess "Unit"  `shouldBe` Just [TokenAnIdent "Unit"]
   it "basic types" $ do
-    lexAndSuccess "Nat"  `shouldBe` Just [TokenAnIdent "Nat"]
-    lexAndSuccess "Bool" `shouldBe` Just [TokenAnIdent "Bool"]
+    lexToSuccess "Nat"  `shouldBe` Just [TokenAnIdent "Nat"]
+    lexToSuccess "Bool" `shouldBe` Just [TokenAnIdent "Bool"]
   it "alphabet keywords" $ do
-    lexAndSuccess "if"   `shouldBe` Just [TokenAnIdent "if"]
-    lexAndSuccess "then" `shouldBe` Just [TokenAnIdent "then"]
-    lexAndSuccess "else" `shouldBe` Just [TokenAnIdent "else"]
+    lexToSuccess "if"   `shouldBe` Just [TokenAnIdent "if"]
+    lexToSuccess "then" `shouldBe` Just [TokenAnIdent "then"]
+    lexToSuccess "else" `shouldBe` Just [TokenAnIdent "else"]
   it "with underscores" $ do
-    lexAndSuccess "_"       `shouldBe` Just [TokenAnIdent "_"]
-    lexAndSuccess "_blue"   `shouldBe` Just [TokenAnIdent "_blue"]
-    lexAndSuccess "yellow_" `shouldBe` Just [TokenAnIdent "yellow_"]
-    lexAndSuccess "pastel_purple" `shouldBe` Just [TokenAnIdent "pastel_purple"]
+    lexToSuccess "_"       `shouldBe` Just [TokenAnIdent "_"]
+    lexToSuccess "_if"   `shouldBe` Just [TokenAnIdent "_if"]
+    lexToSuccess "then_" `shouldBe` Just [TokenAnIdent "then_"]
+    lexToSuccess "else_let" `shouldBe` Just [TokenAnIdent "else_let"]
 
 -- | Subspecieses of identifiers
 prop_variables_can_be_lexed :: CamelName -> Bool
 prop_variables_can_be_lexed (unCamelName >>> T.unpack -> ident)
-  = lexAndSuccess ident == Just [TokenAnIdent ident]
+  = lexToSuccess ident == Just [TokenAnIdent ident]
 
 spec_types_can_be_lexed :: Spec
 spec_types_can_be_lexed =
   it "arrow types" $
-    lexAndSuccess "Nat -> Bool" `shouldBe` Just [TokenAnIdent "Nat", TokenArrow, TokenAnIdent "Bool"]
+    lexToSuccess "Nat -> Bool" `shouldBe` Just [TokenAnIdent "Nat", TokenArrow, TokenAnIdent "Bool"]
 
 spec_lambda_abstractions_can_be_lexed :: Spec
 spec_lambda_abstractions_can_be_lexed =
   it "lambda abstractions" $
-    lexAndSuccess "\\x:Unit.10" `shouldBe` Just [ TokenBackslash, TokenAnIdent "x"
-                                                , TokenColon, TokenAnIdent "Unit"
-                                                , TokenDot, TokenANat 10
-                                                ]
+    lexToSuccess "\\x:Unit.10" `shouldBe` Just [ TokenBackslash, TokenAnIdent "x"
+                                               , TokenColon, TokenAnIdent "Unit"
+                                               , TokenDot, TokenANat 10
+                                               ]
