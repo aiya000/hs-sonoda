@@ -132,7 +132,7 @@ spec_lambda_abstractions_can_be_parsed = do
     -- \s:Unit -> Unit.\z:Unit.z
     let zz   = tokensLambda "z" [tokenUnit] [TokenAnIdent "z"]
         zero = tokensLambda "s" [tokenUnit, to, tokenUnit] zz
-    let zz'   = ExprLambda "z" unitT $ identE "x"
+    let zz'   = ExprLambda "z" unitT $ identE "z"
         zero' = ExprLambda "s" (unitT ~> unitT) zz'
     parseExpr zero `shouldBe` Right zero'
 
