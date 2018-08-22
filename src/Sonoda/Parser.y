@@ -64,6 +64,7 @@ AtomicVal :: { AtomicVal }
 Type :: { Type }
   : AtomicType     { TypeAtomic $1   }
   | Type "->" Type { TypeArrow $1 $3 }
+  | '(' Type ')'   { TypeParens $2   }
 
 AtomicType :: { AtomicType }
   : natType  { TypeNat  }
